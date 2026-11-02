@@ -1,0 +1,35 @@
+import {
+  createLightTheme,
+  type BrandVariants,
+  type Theme,
+} from "@fluentui/react-components";
+const brand: BrandVariants = {
+  10: "#020809",
+  20: "#07181d",
+  30: "#102e37",
+  40: "#163e48",
+  50: "#1d525c",
+  60: "#246671",
+  70: "#2c7b85",
+  80: "#327e89",
+  90: "#388c96",
+  100: "#4b9ba5",
+  110: "#69adb4",
+  120: "#8ac0c5",
+  130: "#acd4d6",
+  140: "#cce7e7",
+  150: "#e3f3f1",
+  160: "#f3faf8",
+};
+export const theme: Theme = {
+  ...createLightTheme(brand),
+  colorBrandBackground: "#102e37",
+  colorBrandBackgroundHover: "#1d525c",
+  colorBrandBackgroundPressed: "#0a2027",
+  colorBrandForeground1: "#1d525c",
+  colorNeutralForeground1: "#142d35",
+  colorNeutralForeground2: "#526b70",
+  colorNeutralBackground1: "#ffffff",
+  fontFamilyBase: '"Segoe UI Variable", "Segoe UI", system-ui, sans-serif',
+  borderRadiusMedium: "8px",
+};

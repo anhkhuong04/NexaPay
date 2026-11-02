@@ -5,6 +5,7 @@ frontend/dist/
 frontend/test-results/
 frontend/playwright-report/
 frontend/coverage/
+frontend/*.tsbuildinfo
 .env
 .env.*
 !.env.example
