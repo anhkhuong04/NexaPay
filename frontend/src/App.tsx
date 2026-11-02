@@ -31,6 +31,7 @@ import { api, ApiError, errorMessage, type Profile, type Session } from "./api";
 import { Brand, FetchError, Loading, Notice, WalletPanel } from "./components";
 import { replaceActor, safeReturnTo, sessionOptions } from "./session";
 import { displayName, loginSchema, registerSchema } from "./validation";
+import { FundingPage, CommandsPage } from "./FundingPages";
 
 function RouteFocus() {
   const { pathname } = useLocation();
@@ -452,6 +453,14 @@ function AppShell({ session }: { session: Session }) {
             <Person24Regular aria-hidden />
             Hồ sơ của tôi
           </NavLink>
+          <NavLink to="/app/add-demo-funds">
+            <Wallet24Regular aria-hidden />
+            Nhận tiền demo
+          </NavLink>
+          <NavLink to="/app/commands">
+            <ArrowClockwise24Regular aria-hidden />
+            Thao tác đã lưu
+          </NavLink>
         </nav>
         <div className="sidebar-bottom">
           <ShieldCheckmark24Regular aria-hidden />
@@ -602,13 +611,18 @@ function Overview() {
           />
         )}
       </section>
+      <p>
+        <Link to="/app/add-demo-funds" className="button-link">
+          Nhận tiền demo
+        </Link>
+      </p>
       <div className="simulation-note">
         <ShieldCheckmark24Regular aria-hidden />
         <div>
           <strong>Trải nghiệm an tâm trong môi trường mô phỏng</strong>
           <p>
-            Số dư này không phải tiền thật. Tính năng cấp tiền demo và chuyển
-            tiền sẽ được bổ sung trong các bản cập nhật tiếp theo.
+            Số dư này không phải tiền thật. Mọi khoản cấp demo đều có hạn mức,
+            có bút toán đối ứng và có thể tra cứu kết quả.
           </p>
         </div>
       </div>
@@ -756,6 +770,8 @@ export function App() {
           <Route index element={<Navigate to="overview" replace />} />
           <Route path="overview" element={<Overview />} />
           <Route path="profile" element={<ProfilePage />} />
+          <Route path="add-demo-funds" element={<FundingPage />} />
+          <Route path="commands" element={<CommandsPage />} />
         </Route>
         <Route
           path="*"

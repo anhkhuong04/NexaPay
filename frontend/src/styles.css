@@ -1000,12 +1000,13 @@ strong {
   }
   .sidebar nav {
     flex-direction: row;
+    flex-wrap: wrap;
     gap: 10px;
     margin-bottom: 14px;
   }
   .sidebar nav a {
     font-size: 14px;
-    flex: 1;
+    flex: 1 1 45%;
     justify-content: center;
     min-height: 48px;
     padding: 10px;
@@ -1105,5 +1106,106 @@ strong {
     animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;
+  }
+}
+
+.funding-card,
+.funding-receipt {
+  max-width: 760px;
+  margin-bottom: 24px;
+}
+.funding-card h2,
+.funding-receipt h2 {
+  font-size: 21px;
+}
+.funding-amount {
+  font-size: 42px;
+  font-weight: 600;
+  color: var(--teal);
+  font-variant-numeric: tabular-nums;
+  margin-block: 24px;
+}
+.funding-review {
+  max-width: 760px;
+  overflow-wrap: anywhere;
+  margin-bottom: 24px;
+}
+.funding-card dl,
+.funding-receipt dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 24px;
+  font-size: 14px;
+  margin-bottom: 28px;
+}
+.funding-card dt,
+.funding-receipt dt {
+  color: var(--muted);
+}
+.funding-card dd,
+.funding-receipt dd {
+  margin: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.funding-card p,
+.funding-receipt p {
+  font-size: 14px;
+  line-height: 1.8;
+}
+.funding-recovery {
+  border-top: 1px solid var(--border);
+  margin-top: 20px;
+  padding-top: 12px;
+}
+.funding-recovery code,
+.command-row code {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+.funding-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.command-row {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+}
+.command-list {
+  margin-bottom: 24px;
+}
+.funding-card > button,
+.funding-actions button {
+  min-height: 44px;
+}
+.command-row > div {
+  min-width: 0;
+}
+.command-row p {
+  font-size: 12px;
+  margin: 5px 0;
+}
+.command-row button {
+  flex-shrink: 0;
+}
+@media (max-width: 480px) {
+  .funding-card dl,
+  .funding-receipt dl {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+  .funding-card dd,
+  .funding-receipt dd {
+    text-align: left;
+    margin-bottom: 10px;
+  }
+  .command-row {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

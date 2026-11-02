@@ -34,7 +34,11 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+export async function request<T>(
+  path: string,
+  init: RequestInit = {},
+  acceptTerminal = false,
+): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`/api/v1${path}`, {
@@ -53,7 +57,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   }
   if (response.status === 204) return undefined as T;
   const body: unknown = await response.json();
-  if (!response.ok) {
+  if (!response.ok && !(acceptTerminal && response.status === 422)) {
     const error = body as {
       code?: string;
       message?: string;

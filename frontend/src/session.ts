@@ -1,5 +1,6 @@
 import { QueryCache, QueryClient, queryOptions } from "@tanstack/react-query";
 import { api, ApiError, type Session } from "./api";
+import { RECOVERY_KEY } from "./funding";
 
 export function makeQueryClient() {
   const client: QueryClient = new QueryClient({
@@ -36,12 +37,24 @@ export async function replaceActor(
   client: QueryClient,
   session: Session | null,
 ) {
+  let recovery: string | null = null;
+  try {
+    const value = sessionStorage.getItem(RECOVERY_KEY);
+    if (session && value && JSON.parse(value).actorId === session.userId)
+      recovery = value;
+  } catch {
+    /* Discard invalid or cross-actor context. */
+  }
   await client.cancelQueries();
   client.clear();
   client.setQueryData(["session"], session);
   for (const key of Object.keys(sessionStorage))
     if (key.startsWith("nexapay.")) sessionStorage.removeItem(key);
+  if (recovery) sessionStorage.setItem(RECOVERY_KEY, recovery);
 }
 export function safeReturnTo(value: unknown) {
-  return value === "/app/profile" ? "/app/profile" : "/app/overview";
+  return typeof value === "string" &&
+    ["/app/profile", "/app/add-demo-funds", "/app/commands"].includes(value)
+    ? value
+    : "/app/overview";
 }
