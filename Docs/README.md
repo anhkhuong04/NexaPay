@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-01  
 **Updated:** 2026-11-02  
-**Status:** Accepted design baseline; P0-01 đã verified, P0-02 funding đã verified local và GitHub Actions (39 backend, 12 frontend, 8 E2E). Toàn bộ P0 chưa Done.
+**Status:** Accepted design baseline; P0-01–03 VERIFIED local và GitHub Actions (50 backend, 17 frontend unit, 16 E2E). P0 còn hoàn thiện Overview/UI-03 và chốt DoD theo plan P0-04 đề xuất; chưa đánh dấu toàn bộ P0 Done.
 
 ## Đọc theo thứ tự
 
@@ -30,7 +30,7 @@ Tên ba file vẫn có `_v0.1` để giữ link/open tabs; nội dung hiện t�
 1. P0-01 đã có frontend/backend/Compose, pinned tooling, DDL/Flyway/OpenAPI và tests identity/wallet. Xem [README chạy ứng dụng](../README.md).
 2. P0-02 đã có funding/ledger/quota/commands/recovery và CLI đối soát funding; xem plan/evidence bên dưới.
 3. P0-03 đã verified P2P/history, MM-01–08 và UI/recovery; evidence ở plan bên dưới.
-4. Nghiệm thu MM-01–08 và P0 DoD trước P1a. Host/public demo chỉ chọn khi biết ngân sách; không tự cam kết chi phí hoặc ngày release.
+4. Đề xuất P0-04: recent activity, trạng thái quick actions trên Overview và bảng nghiệm thu P0 DoD. Sau đó P1a-01 merchant → P1a-02 payment/checkout → P1a-03 refund. Host/public demo chỉ chọn khi biết ngân sách; không cam kết chi phí hoặc ngày release.
 
 Thông tin kế hoạch chưa có: số giờ/tuần, hạn portfolio, ngân sách hosting. Các thông tin này không cản P0 local. Không có benchmark/test/deployment claim trong baseline khi chưa có evidence thực tế.
 
@@ -41,6 +41,7 @@ Thông tin kế hoạch chưa có: số giờ/tuần, hạn portfolio, ngân sá
 | P0-01 Identity & Wallet | [Phạm vi, implementation và acceptance evidence](<../Implementation Plan/P0-01-identity-wallet.md>) | VERIFIED ngày 02/11/2026; [CI passed](https://github.com/anhkhuong04/NexaPay/actions/runs/41385330954); P0-01 đã bàn giao; xem P0-02 bên dưới |
 | P0-02 Funding & Commands | [Implementation và acceptance evidence](<../Implementation Plan/P0-02-demo-funding.md>) | VERIFIED; [CI passed](https://github.com/anhkhuong04/NexaPay/actions/runs/41391311765) |
 | P0-03 P2P & History | [Implementation và acceptance evidence](<../Implementation Plan/P0-03-p2p-history.md>) | VERIFIED — 50 backend/17 frontend/16 E2E; [CI passed](https://github.com/anhkhuong04/NexaPay/actions/runs/41397070504) |
+| P0-04 Overview & Release Readiness | [Đánh giá tiến độ và implementation plan tiếp theo](<../Implementation Plan/P0-04-overview-release-readiness.md>) | PROPOSED — chưa implement; kèm roadmap P1a và các điểm migration |
 
 ## Artifacts implementation
 

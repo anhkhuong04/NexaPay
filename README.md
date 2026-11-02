@@ -134,14 +134,16 @@ if ($LASTEXITCODE -ne 0) { throw 'Reconciliation failed; investigate reported ID
 ```
 
 Linux: `docker compose --env-file .env -f infra/compose.yaml exec -T db psql -U nexapay_app -d nexapay < infra/reconcile.sql`.
-Hiện kiểm tra journal/projection/funding/command/quota/issuance; mở rộng đối soát
-cho transfer khi triển khai P0-03. Không xoá volume hay sửa balance để làm report xanh.
+Hiện kiểm tra journal/projection/funding/transfer/command/quota/issuance.
+Không xoá volume hay sửa balance để làm report xanh.
 
 ## Tài liệu
 
 - [Baseline và chỉ mục](Docs/README.md)
 - [Plan, acceptance và kết quả P0-01](<Implementation Plan/P0-01-identity-wallet.md>)
 - [Plan và evidence P0-02](<Implementation Plan/P0-02-demo-funding.md>)
+- [Plan và evidence P0-03](<Implementation Plan/P0-03-p2p-history.md>)
+- [Đề xuất P0-04 và roadmap P1a](<Implementation Plan/P0-04-overview-release-readiness.md>)
 - [OpenAPI](Docs/api/p0-01.openapi.yaml)
 - [OpenAPI funding/commands](Docs/api/p0-02.openapi.yaml)
 - [Wireframes và trạng thái UI](Docs/ui/P0-01-wireframes.md)

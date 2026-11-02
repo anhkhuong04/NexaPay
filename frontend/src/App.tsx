@@ -12,7 +12,7 @@ import {
   ShieldCheckmark24Regular,
   Wallet24Regular,
 } from "@fluentui/react-icons";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useIsFetching, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Link,
   NavLink,
@@ -33,6 +33,7 @@ import { replaceActor, safeReturnTo, sessionOptions } from "./session";
 import { displayName, loginSchema, registerSchema } from "./validation";
 import { FundingPage, CommandsPage } from "./FundingPages";
 import { SendPage, HistoryPage, TransactionPage } from "./TransferPages";
+import { RecentActivity, recentActivityKey } from "./RecentActivity";
 
 function RouteFocus() {
   const { pathname } = useLocation();
@@ -516,6 +517,10 @@ function AppShell({ session }: { session: Session }) {
 
 function Overview() {
   const session = useOutletContext<Session>();
+  const client = useQueryClient();
+  const historyFetching = useIsFetching({
+    queryKey: recentActivityKey(session.userId),
+  });
   const [copyMessage, setCopyMessage] = useState("");
   const profile = useQuery({
     queryKey: ["profile", session.userId, "personal"],
@@ -547,8 +552,14 @@ function Overview() {
         <Button
           appearance="outline"
           icon={<ArrowClockwise24Regular />}
-          disabled={wallet.isFetching}
-          onClick={() => void wallet.refetch()}
+          disabled={wallet.isFetching || historyFetching > 0}
+          onClick={() => {
+            void wallet.refetch();
+            void client.refetchQueries({
+              queryKey: recentActivityKey(session.userId),
+              type: "active",
+            });
+          }}
         >
           Tải lại
         </Button>
@@ -574,6 +585,15 @@ function Overview() {
           </Link>
         </section>
       </div>
+      <p>
+        <Link to="/app/send" className="button-link">
+          Chuyển tiền
+        </Link>{" "}
+        <Link to="/app/add-demo-funds" className="button-link">
+          Nhận tiền demo
+        </Link>
+      </p>
+      <RecentActivity actorId={session.userId} />
       <section className="card wallet-details">
         <div className="section-heading">
           <div>
@@ -620,14 +640,6 @@ function Overview() {
           />
         )}
       </section>
-      <p>
-        <Link to="/app/send" className="button-link">
-          Chuyển tiền
-        </Link>{" "}
-        <Link to="/app/add-demo-funds" className="button-link">
-          Nhận tiền demo
-        </Link>
-      </p>
       <div className="simulation-note">
         <ShieldCheckmark24Regular aria-hidden />
         <div>

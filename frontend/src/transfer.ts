@@ -86,8 +86,13 @@ export const transferApi = {
       true,
     );
   },
-  history: (filter: HistoryFilter, cursor?: string, signal?: AbortSignal) => {
-    const params = new URLSearchParams({ limit: "20" });
+  history: (
+    filter: HistoryFilter,
+    cursor?: string,
+    signal?: AbortSignal,
+    limit = 20,
+  ) => {
+    const params = new URLSearchParams({ limit: String(limit) });
     for (const [k, v] of Object.entries(filter)) if (v) params.set(k, v);
     if (cursor) params.set("cursor", cursor);
     return request<{ items: Transaction[]; nextCursor: string | null }>(
