@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-01  
 **Updated:** 2026-11-02  
-**Status:** Accepted design baseline; P0-01 identity/wallet đã implement và verify local (24 backend, 8 frontend, 4 E2E). Hosted CI được theo dõi sau push; toàn bộ P0 chưa Done.
+**Status:** Accepted design baseline; P0-01 identity/wallet đã implement, verify local và GitHub Actions (24 backend, 8 frontend, 4 E2E). Đã push main; toàn bộ P0 chưa Done.
 
 ## Đọc theo thứ tự
 
@@ -38,7 +38,7 @@ Thông tin kế hoạch chưa có: số giờ/tuần, hạn portfolio, ngân sá
 
 | Slice | Plan | Trạng thái |
 |---|---|---|
-| P0-01 Identity & Wallet | [Phạm vi, implementation và acceptance evidence](<../Implementation Plan/P0-01-identity-wallet.md>) | LOCAL_VERIFIED ngày 02/11/2026; hosted CI theo dõi sau push; funding/P2P/history là các slice tiếp theo |
+| P0-01 Identity & Wallet | [Phạm vi, implementation và acceptance evidence](<../Implementation Plan/P0-01-identity-wallet.md>) | VERIFIED ngày 02/11/2026; [CI passed](https://github.com/anhkhuong04/NexaPay/actions/runs/41385330954); funding/P2P/history là các slice tiếp theo |
 
 ## Artifacts implementation
 

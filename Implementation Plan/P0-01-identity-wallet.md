@@ -1,8 +1,8 @@
 # P0-01 — Identity & Wallet foundation
 
 **Ngày:** 02/11/2026  
-**Trạng thái kế hoạch:** IMPLEMENTED — các work packages đã bàn giao; chờ hosted CI sau push
-**Trạng thái phần mềm:** LOCAL_VERIFIED — 24 backend tests, 8 frontend tests, 4 E2E passed; P0 chưa Done
+**Trạng thái kế hoạch:** COMPLETED — IW-00–07 đã bàn giao và nghiệm thu
+**Trạng thái phần mềm:** VERIFIED — local và GitHub Actions passed; P0-01 Done, toàn bộ P0 chưa Done
 **Chế độ task hiện tại:** Implementation; commit các mốc quan trọng và push lần đầu khi hoàn tất.
 
 ## 1. Kết quả cần đạt
@@ -173,7 +173,7 @@ Khi IW-00 lựa chọn Maven/Gradle và package manager, ưu tiên wrapper/lockf
 
 ## 10. Acceptance và verification matrix
 
-Các checks local dưới đây đã **PASSED ngày 02/11/2026**; hosted GitHub Actions được theo dõi riêng sau lần push đầu. Không có test bị skip.
+Các checks local dưới đây đã **PASSED ngày 02/11/2026**; hosted [GitHub Actions cũng PASSED](https://github.com/anhkhuong04/NexaPay/actions/runs/41385330954) trên commit implementation `2dfeb47`. Không có test bị skip.
 
 | ID | Kịch bản cần chứng minh | Evidence | Requirement |
 |---|---|---|---|
@@ -188,7 +188,7 @@ Các checks local dưới đây đã **PASSED ngày 02/11/2026**; hosted GitHub 
 | IW-T09 | Dashboard loading/error không giả 0; logout/switch và response cũ không lộ dữ liệu A sang B | PASSED — component/cache tests + E2E delayed response, 503, retry, expired mutation recovery | FR-W02, NFR-09/10 |
 | IW-T10 | Signup→sign-in→overview 0→profile update→refresh→logout→protected route denial | PASSED — 4 Playwright cases across desktop/mobile on real Docker app/DB | US-01, phần overview US-02 |
 | IW-T11 | Keyboard/focus/labels/errors, mobile/desktop, zoom/reflow/contrast và same-origin deep links/API 404 | PASSED — axe signup/wallet/profile, keyboard toggle, 320px reflow, screenshots; packaged deep link/API JSON 404 | NFR-08/09 |
-| IW-T12 | Flyway clean setup, app runtime permissions, module dependency checks và CI build/frontend typecheck/lint/test | PASSED local — Flyway/PostgreSQL role guards, ArchUnit, typecheck/lint/build; hosted CI pending first push | NFR-07/08 |
+| IW-T12 | Flyway clean setup, app runtime permissions, module dependency checks và CI build/frontend typecheck/lint/test | PASSED local — Flyway/PostgreSQL role guards, ArchUnit, typecheck/lint/build; hosted CI PASSED (run 41385330954) | NFR-07/08 |
 
 Bootstrap 0 chưa cần posted entries. MM-01–08 của P0 **chưa được nghiệm thu** bằng slice này: không dùng việc mọi balance đều 0 để claim MM-08 đối soát hoàn chỉnh hoặc MM-05 journal guards đã đạt. Các checks đó bắt buộc trước P0 Done và được triển khai khi có ledger posting/funding/transfer.
 
@@ -202,7 +202,7 @@ Bootstrap 0 chưa cần posted entries. MM-01–08 của P0 **chưa được ngh
 | Connected browser — frontend/ | `E2E_BASE_URL=http://127.0.0.1:18082 npm run test:e2e`: PASSED, 4/4, 29.0s | `frontend/playwright-report/`, `frontend/test-results/`, `.tools/final-e2e.log`; PowerShell đặt biến qua `$env:E2E_BASE_URL` |
 | Compose — root | `docker compose --env-file .env -f infra/compose.yaml config --quiet`; `--profile app build app`; `--profile app up -d app`: PASSED | Image `infra-app`, real PostgreSQL 17.7 và non-root app container |
 | Packaged runtime — root | `node infra/runtime-smoke.mjs`: PASSED | `.tools/runtime-smoke.log`; restart/session/persistence, SPA/API routing, default secure cookie |
-| Hosted CI | [.github/workflows/ci.yml](../.github/workflows/ci.yml) chạy cùng gates + E2E | NOT RUN trước first push; theo dõi kết quả GitHub Actions sau push |
+| Hosted CI | [.github/workflows/ci.yml](../.github/workflows/ci.yml) chạy cùng gates + E2E | PASSED — [run 41385330954](https://github.com/anhkhuong04/NexaPay/actions/runs/41385330954), implementation commit `2dfeb47`; tất cả steps success và reports đã upload |
 | Documentation | Local links/case/fences/JSON/YAML/OpenAPI refs + requirement IDs | PASSED — 16 documents, 92 local links/case, fences, JSON/YAML, 36 OpenAPI refs và 8 schema examples; 8 operations trên 7 paths |
 
 Reports/generated artifacts được gitignore; tests/config và lệnh tái lập được commit. Không coi image build `-DskipTests` là test pass: backend đã chạy đầy đủ `verify` bên ngoài Docker; các lần package sau chỉ bundle UI mới. Các fake-account fixtures do E2E/runtime smoke tạo không chứa dữ liệu thật, không reset volume.
@@ -210,7 +210,7 @@ Reports/generated artifacts được gitignore; tests/config và lệnh tái l�
 ## 12. Slice Definition of Done và handoff
 
 - [x] Connected flow ở mục 1 chạy trên local same-origin stack, không mock runtime data hoặc auth bypass.
-- [x] IW-T01–12 có evidence local phù hợp; hosted CI được tách trạng thái để không nhầm với local pass.
+- [x] IW-T01–12 có evidence phù hợp; local và hosted CI đều pass, không còn acceptance bắt buộc fail/not-run.
 - [x] Schema/OpenAPI/code/UI/tests nhất quán; commands tái lập trong README/scoped AGENTS/CI.
 - [x] Không duplicate wallet/projection, không seed nonzero, credentials an toàn, audit signup/profile đúng transaction.
 - [x] Partial FR-W02/W03/FR-AU01 và P0 gates còn thiếu được ghi rõ; không tuyên bố P0 Done.
@@ -233,5 +233,6 @@ Reports/generated artifacts được gitignore; tests/config và lệnh tái l�
 - Các lỗi phát hiện và sửa qua E2E: label selector phải bỏ required marker của Fluent; contrast sidebar/footer; controlled profile field để giữ giá trị sau refresh; explicit auth navigation khi mutation trả 401. Không nới lỏng axe/security assertions để pass.
 - Visual QA đã xem landing desktop, wallet mobile và profile desktop; E2E kiểm tra không overflow ở 320px, screenshot desktop/mobile, axe trên signup/wallet/profile và keyboard focus password toggle.
 - Commit milestones: `2641075` scaffold/contracts; `b9ac9ac` atomic provisioning/security; `76e59bb` Fluent UI; `7791711` API bounds; `75f7f72` browser regression fixes; `a2d7d3c` packaging/runtime smoke/CI.
-- First push target được chủ dự án yêu cầu: `https://github.com/anhkhuong04/NexaPay.git`, branch `main`. Hosted CI chưa có kết quả trước push; không claim đã green.
+- First push thành công đến `https://github.com/anhkhuong04/NexaPay.git`, branch `main`, implementation commit `2dfeb47`. GitHub Actions run `41385330954` PASSED toàn bộ frontend/backend/runtime/E2E và upload reports. Commit bàn giao sau cùng chỉ cập nhật tài liệu/evidence, không đổi runtime code.
+- `.env` local dùng APP_PORT=18082; Docker app vẫn chạy tại `http://127.0.0.1:18082`. JAR đã được bundle lại từ frontend cuối cùng; tiến trình JAR kiểm thử 18080 và các subprocess smoke đã dừng. Kiểm tra tracked files không phát hiện credential patterns hoặc runtime secrets/build caches; working tree được commit sạch.
 - Hạn chế đã chốt: một instance, session/throttle memory; public deployment/HTTPS termination chưa triển khai. Funding/P2P/history/reconciliation và MM-01–08 còn ở slice sau. Chưa có benchmark tải hay nghiệm thu toàn bộ WCAG bằng assistive technology; axe/keyboard/reflow là evidence trong phạm vi P0-01.
