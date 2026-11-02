@@ -17,7 +17,7 @@ export interface FundingCapabilities {
 }
 export interface CommandResult {
   key: string;
-  operationType: "DEMO_FUNDING" | "TRANSFER" | "PAYMENT";
+  operationType: "DEMO_FUNDING" | "TRANSFER" | "PAYMENT" | "REFUND";
   resourceId: string;
   status: "SUCCEEDED" | "FAILED";
   originalHttpStatus: 201 | 422;
@@ -34,6 +34,7 @@ export interface CommandResult {
     note?: string;
     requestRef?: string;
     paymentId?: string;
+    merchantId?: string;
   };
   error: { code?: string; message?: string };
 }
@@ -42,10 +43,12 @@ export interface CommandPage {
   nextCursor: string | null;
 }
 export interface Recovery {
+  merchantId?: string;
+  paymentId?: string;
   checkoutRef?: string;
   environmentEpoch: string;
   actorId: string;
-  operationType: "DEMO_FUNDING" | "TRANSFER" | "PAYMENT";
+  operationType: "DEMO_FUNDING" | "TRANSFER" | "PAYMENT" | "REFUND";
   key: string;
 }
 export const RECOVERY_KEY = "nexapay.money-recovery";
@@ -75,6 +78,7 @@ export function refreshMoneyViews(client: QueryClient, actorId: string) {
     "checkout",
     "payment-requests",
     "merchant-payments",
+    "refunds",
   ])
     void client.invalidateQueries({ queryKey: [domain, actorId] });
 }
@@ -94,6 +98,13 @@ export function readRecovery(actorId: string, epoch: string): Recovery | null {
       "operationType" in raw &&
       (raw.operationType === "DEMO_FUNDING" ||
         raw.operationType === "TRANSFER" ||
+        (raw.operationType === "REFUND" &&
+          "merchantId" in raw &&
+          typeof raw.merchantId === "string" &&
+          uuid.test(raw.merchantId) &&
+          "paymentId" in raw &&
+          typeof raw.paymentId === "string" &&
+          uuid.test(raw.paymentId)) ||
         (raw.operationType === "PAYMENT" &&
           "checkoutRef" in raw &&
           typeof raw.checkoutRef === "string" &&
@@ -107,6 +118,14 @@ export function readRecovery(actorId: string, epoch: string): Recovery | null {
         environmentEpoch: epoch,
         operationType: raw.operationType,
         key: raw.key,
+        ...(raw.operationType === "REFUND" &&
+        "merchantId" in raw &&
+        "paymentId" in raw
+          ? {
+              merchantId: raw.merchantId as string,
+              paymentId: raw.paymentId as string,
+            }
+          : {}),
         ...(raw.operationType === "PAYMENT" && "checkoutRef" in raw
           ? { checkoutRef: raw.checkoutRef as string }
           : {}),
@@ -154,3 +173,14 @@ export const fundingApi = {
     );
   },
 };
+
+export function recoveryPath(
+  intent: Pick<Recovery, "operationType" | "checkoutRef" | "paymentId">,
+) {
+  if (intent.operationType === "REFUND")
+    return `/business/payments/${intent.paymentId}/refund`;
+  if (intent.operationType === "PAYMENT") return `/pay/${intent.checkoutRef}`;
+  return intent.operationType === "TRANSFER"
+    ? "/app/send"
+    : "/app/add-demo-funds";
+}

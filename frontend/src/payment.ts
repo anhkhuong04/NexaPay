@@ -22,6 +22,9 @@ export interface Checkout {
   expiresAt: string;
 }
 export interface Payment {
+  refundedAmount: string;
+  refundableAmount: string;
+  refundStatus: "NONE" | "PARTIAL" | "FULL";
   id: string;
   requestId: string;
   requestRef: string;
@@ -51,6 +54,8 @@ export interface PaymentPage<T> {
   nextCursor: string | null;
 }
 export interface PaymentSummary {
+  refundsToday: number;
+  refundedToday: string;
   paidToday: number;
   receivedToday: string;
   pendingRequests: number;

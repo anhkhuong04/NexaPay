@@ -1,3 +1,4 @@
+import { RefundPage } from "./RefundPages";
 import { CheckoutPage } from "./CheckoutPage";
 import { PaymentBusinessPage } from "./PaymentBusinessPages";
 import { MerchantOnboarding, BusinessPage } from "./MerchantPages";
@@ -477,6 +478,10 @@ function AppShell({ session }: { session: Session }) {
               <ArrowClockwise24Regular aria-hidden />
               Thanh toán đã nhận
             </NavLink>
+            <NavLink to="/business/refunds">
+              <ArrowClockwise24Regular aria-hidden />
+              Hoàn tiền
+            </NavLink>
             <NavLink to="/business/settings">
               <Person24Regular aria-hidden />
               Cài đặt doanh nghiệp
@@ -845,6 +850,12 @@ export function App() {
             path="transactions"
             element={<PaymentBusinessPage mode="payments" />}
           />
+          <Route
+            path="payments/:id/refund"
+            element={<RefundPage mode="form" />}
+          />
+          <Route path="refunds" element={<RefundPage mode="list" />} />
+          <Route path="refunds/:id" element={<RefundPage mode="detail" />} />
           <Route path="onboarding" element={<MerchantOnboarding />} />
           <Route path="overview" element={<BusinessPage />} />
           <Route path="settings" element={<BusinessPage settings />} />

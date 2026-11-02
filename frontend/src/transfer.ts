@@ -36,6 +36,7 @@ export interface Transaction {
   ledgerTransactionId: string | null;
   errorCode: string | null;
   createdAt: string;
+  paymentId?: string | null;
 }
 export interface HistoryFilter {
   type: string;
@@ -120,6 +121,8 @@ export function directionLabel(direction: Direction) {
 export const transactionLabel = (
   transaction: Pick<Transaction, "operationType" | "direction">,
 ) =>
-  transaction.operationType === "PAYMENT"
-    ? "Thanh toán doanh nghiệp"
-    : directionLabel(transaction.direction);
+  transaction.operationType === "REFUND"
+    ? "Nhận hoàn tiền"
+    : transaction.operationType === "PAYMENT"
+      ? "Thanh toán doanh nghiệp"
+      : directionLabel(transaction.direction);

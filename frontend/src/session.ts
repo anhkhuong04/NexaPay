@@ -71,6 +71,7 @@ export function safeReturnTo(value: unknown) {
       "/business/payment-requests",
       "/business/payment-requests/new",
       "/business/transactions",
+      "/business/refunds",
       "/business/onboarding",
       "/business/overview",
       "/business/settings",
@@ -80,6 +81,9 @@ export function safeReturnTo(value: unknown) {
       "/app/send",
       "/app/transactions",
     ].includes(value) ||
+      /^\/business\/payments\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/refund$/i.test(
+        value,
+      ) ||
       /^\/pay\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
         value,
       ))

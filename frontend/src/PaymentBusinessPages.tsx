@@ -36,6 +36,7 @@ import {
   type Payment,
 } from "./payment";
 import { parseVndInput, localTime } from "./transfer";
+import { refundStatusLabel } from "./refund";
 import { formatMoney } from "./validation";
 
 function Heading({ title }: { title: string }) {
@@ -582,6 +583,14 @@ function PaymentRow({ payment }: { payment: Payment }) {
           {payment.payerName} · {localTime(payment.paidAt)}
         </p>
         <code>{payment.id}</code>
+        <p>
+          {refundStatusLabel(payment.refundStatus)} · Đã hoàn{" "}
+          {formatMoney(payment.refundedAmount)} · Còn được hoàn{" "}
+          {formatMoney(payment.refundableAmount)}
+        </p>
+        <Link to={`/business/payments/${payment.id}/refund`}>
+          {payment.refundableAmount === "0" ? "Xem hoàn tiền" : "Hoàn tiền"}
+        </Link>
       </div>
       <Link
         className="request-detail-link"
@@ -618,6 +627,10 @@ export function BusinessPaymentSummary({
         <dd>{summary.data.paidToday}</dd>
         <dt>Tiền đã nhận hôm nay (UTC)</dt>
         <dd>{formatMoney(summary.data.receivedToday)}</dd>
+        <dt>Hoàn tiền thành công hôm nay (UTC)</dt>
+        <dd>{summary.data.refundsToday}</dd>
+        <dt>Tiền đã hoàn hôm nay (UTC)</dt>
+        <dd>{formatMoney(summary.data.refundedToday)}</dd>
         <dt>Yêu cầu còn chờ và chưa hết hạn</dt>
         <dd>{summary.data.pendingRequests}</dd>
       </dl>

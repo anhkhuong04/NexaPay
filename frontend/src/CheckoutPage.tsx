@@ -6,6 +6,7 @@ import { api, ApiError, errorMessage, type Session, type Wallet } from "./api";
 import { Brand, FetchError, Loading, Notice } from "./components";
 import { Receipt } from "./FundingPages";
 import {
+  recoveryPath,
   cacheTerminal,
   refreshMoneyViews,
   fundingApi,
@@ -263,13 +264,7 @@ function PayPanel({
                       </Link>
                     )}
                   {intent.operationType !== "PAYMENT" && (
-                    <Link
-                      to={
-                        intent.operationType === "TRANSFER"
-                          ? "/app/send"
-                          : "/app/add-demo-funds"
-                      }
-                    >
+                    <Link to={recoveryPath(intent)}>
                       Tiếp tục thao tác đang lưu
                     </Link>
                   )}

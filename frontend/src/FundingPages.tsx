@@ -36,7 +36,9 @@ export function Receipt({ result }: { result: CommandResult }) {
             ? "Đã chuyển tiền"
             : result.operationType === "PAYMENT"
               ? "Đã thanh toán"
-              : "Đã nhận tiền demo"
+              : result.operationType === "REFUND"
+                ? "Đã hoàn tiền"
+                : "Đã nhận tiền demo"
           : "Thao tác bị từ chối"}
       </h2>
       <Notice error={result.status === "FAILED"}>
@@ -45,12 +47,15 @@ export function Receipt({ result }: { result: CommandResult }) {
             ? `Đã chuyển ${formatMoney(result.result.amount!)} đến ${result.result.recipientName}.`
             : result.operationType === "PAYMENT"
               ? `Đã thanh toán ${formatMoney(result.result.amount!)} cho ${result.result.recipientName}.`
-              : `${formatMoney(result.result.amount!)} đã được ghi có vào ví của bạn.`
+              : result.operationType === "REFUND"
+                ? `Đã hoàn ${formatMoney(result.result.amount!)} về ${result.result.recipientName}.`
+                : `${formatMoney(result.result.amount!)} đã được ghi có vào ví của bạn.`
           : result.error.message}
       </Notice>
       <dl>
         {(result.operationType === "TRANSFER" ||
-          result.operationType === "PAYMENT") && (
+          result.operationType === "PAYMENT" ||
+          result.operationType === "REFUND") && (
           <>
             <dt>Ví gửi</dt>
             <dd>{result.result.sourceWalletId}</dd>
@@ -67,12 +72,14 @@ export function Receipt({ result }: { result: CommandResult }) {
             <dd>{result.result.note || "—"}</dd>
           </>
         )}
-        {result.operationType === "PAYMENT" && result.result.paymentId && (
-          <>
-            <dt>Mã thanh toán</dt>
-            <dd>{result.result.paymentId}</dd>
-          </>
-        )}
+        {(result.operationType === "PAYMENT" ||
+          result.operationType === "REFUND") &&
+          result.result.paymentId && (
+            <>
+              <dt>Mã thanh toán</dt>
+              <dd>{result.result.paymentId}</dd>
+            </>
+          )}
         <dt>Mã giao dịch</dt>
         <dd>{result.resourceId}</dd>
         <dt>Thời gian</dt>
@@ -86,7 +93,11 @@ export function Receipt({ result }: { result: CommandResult }) {
       </dl>
       <p>
         <Link
-          to={`/app/transactions/${result.operationType}/${result.resourceId}`}
+          to={
+            result.operationType === "REFUND"
+              ? `/business/refunds/${result.resourceId}`
+              : `/app/transactions/${result.operationType}/${result.resourceId}`
+          }
         >
           Xem chi tiết
         </Link>{" "}
@@ -115,6 +126,7 @@ function FundingPanel({
     key: string;
     operationType: CommandResult["operationType"];
     checkoutRef?: string;
+    paymentId?: string;
     draft?: FundingInput;
   } | null>(() => {
     const saved = readRecovery(session.userId, capabilities.environmentEpoch);
@@ -123,6 +135,7 @@ function FundingPanel({
     return {
       key: saved.key,
       checkoutRef: saved.checkoutRef,
+      paymentId: saved.paymentId,
       operationType: saved.operationType,
       draft: memory?.operationType === "DEMO_FUNDING" ? memory.body : undefined,
     };
@@ -291,6 +304,13 @@ function FundingPanel({
                           Tiếp tục thanh toán
                         </Link>
                       )}
+                    {intent.operationType === "REFUND" && (
+                      <Link
+                        to={`/business/payments/${intent.paymentId}/refund`}
+                      >
+                        Tiếp tục hoàn tiền
+                      </Link>
+                    )}
                     {intent.operationType === "TRANSFER" && (
                       <Link to="/app/send">Tiếp tục chuyển tiền</Link>
                     )}
@@ -436,12 +456,16 @@ export function CommandsPage() {
                         ? "Đã chuyển tiền"
                         : result.operationType === "PAYMENT"
                           ? "Đã thanh toán"
-                          : "Đã nhận tiền demo"
+                          : result.operationType === "REFUND"
+                            ? "Đã hoàn tiền"
+                            : "Đã nhận tiền demo"
                       : result.operationType === "TRANSFER"
                         ? "Chuyển tiền bị từ chối"
                         : result.operationType === "PAYMENT"
                           ? "Thanh toán bị từ chối"
-                          : "Cấp tiền bị từ chối"}
+                          : result.operationType === "REFUND"
+                            ? "Hoàn tiền bị từ chối"
+                            : "Cấp tiền bị từ chối"}
                   </strong>
                   <p>
                     {new Date(result.createdAt).toLocaleString("vi-VN", {

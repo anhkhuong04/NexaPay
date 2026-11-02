@@ -82,6 +82,7 @@ function SendPanel({
     key: string;
     operationType: CommandResult["operationType"];
     checkoutRef?: string;
+    paymentId?: string;
     draft?: TransferInput;
   } | null>(() => {
     const ref = readRecovery(session.userId, caps.environmentEpoch);
@@ -90,6 +91,7 @@ function SendPanel({
     return {
       key: ref.key,
       checkoutRef: ref.checkoutRef,
+      paymentId: ref.paymentId,
       operationType: ref.operationType,
       draft: memory?.operationType === "TRANSFER" ? memory.body : undefined,
     };
@@ -393,7 +395,9 @@ function SendPanel({
                   ? "Kết quả chuyển tiền"
                   : intent.operationType === "PAYMENT"
                     ? "Khôi phục thanh toán"
-                    : "Khôi phục thao tác cấp tiền"}
+                    : intent.operationType === "REFUND"
+                      ? "Khôi phục hoàn tiền"
+                      : "Khôi phục thao tác cấp tiền"}
               </h2>
               <p>
                 Mã thao tác: <code>{intent.key}</code>
@@ -427,6 +431,13 @@ function SendPanel({
                             Tiếp tục thanh toán
                           </Link>
                         )}
+                      {intent.operationType === "REFUND" && (
+                        <Link
+                          to={`/business/payments/${intent.paymentId}/refund`}
+                        >
+                          Tiếp tục hoàn tiền
+                        </Link>
+                      )}
                       {intent.operationType === "DEMO_FUNDING" && (
                         <Link to="/app/add-demo-funds">
                           Tiếp tục thao tác cấp tiền
@@ -693,6 +704,14 @@ export function TransactionPage() {
                 : "Giao dịch bị từ chối"}
             </Notice>
             <dl>
+              {t.paymentId && (
+                <>
+                  <dt>Thanh toán gốc</dt>
+                  <dd>
+                    <code>{t.paymentId}</code>
+                  </dd>
+                </>
+              )}
               <dt>Mã giao dịch</dt>
               <dd>{t.id}</dd>
               <dt>Số tiền</dt>
