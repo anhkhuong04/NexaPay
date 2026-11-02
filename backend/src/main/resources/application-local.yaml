@@ -5,4 +5,4 @@ server:
         secure: false
 nexapay:
   funding:
-    enabled: ${DEMO_FUNDING_ENABLED:true}
+    enabled: ${NEXAPAY_FUNDING_ENABLED:true}

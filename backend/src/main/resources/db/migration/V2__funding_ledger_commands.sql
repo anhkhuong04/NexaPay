@@ -159,6 +159,10 @@ LANGUAGE SQL STABLE AS $$
     ON t.operation_type='DEMO_FUNDING' AND t.operation_id=f.id
     WHERE (f.status='SUCCEEDED' AND (t.id IS NULL OR t.id IS DISTINCT FROM f.ledger_transaction_id))
        OR (f.status='FAILED' AND t.id IS NOT NULL)
+       OR (f.status='SUCCEEDED' AND (
+           (SELECT count(*) FROM ledger_entries e WHERE e.transaction_id=t.id)<>2 OR
+           NOT EXISTS(SELECT 1 FROM ledger_entries e WHERE e.transaction_id=t.id AND e.account_id=f.account_id AND e.amount=f.amount) OR
+           NOT EXISTS(SELECT 1 FROM ledger_entries e WHERE e.transaction_id=t.id AND e.account_id=(SELECT issuance_account_id FROM demo_environment) AND e.amount=-f.amount)))
     UNION ALL
     SELECT 'orphan_posting',t.id::text FROM ledger_transactions t LEFT JOIN demo_fundings f ON f.id=t.operation_id
     WHERE t.operation_type='DEMO_FUNDING' AND (f.id IS NULL OR f.status<>'SUCCEEDED')

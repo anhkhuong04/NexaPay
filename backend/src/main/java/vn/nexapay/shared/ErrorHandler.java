@@ -57,6 +57,15 @@ public class ErrorHandler {
 
   @ExceptionHandler(DataIntegrityViolationException.class)
   ResponseEntity<?> conflict(HttpServletRequest r) {
+    if (!r.getRequestURI().equals("/api/v1/auth/register")) {
+      log.error("constraint_failure correlationId={}", r.getAttribute("correlationId"));
+      return errors.response(
+          r,
+          500,
+          "INTERNAL_ERROR",
+          "Chưa thể xử lý yêu cầu. Vui lòng kiểm tra kết quả trước khi thử lại.",
+          Map.of());
+    }
     return errors.response(
         r,
         409,

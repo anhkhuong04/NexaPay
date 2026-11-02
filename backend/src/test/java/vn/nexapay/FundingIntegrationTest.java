@@ -211,24 +211,36 @@ class FundingIntegrationTest {
   }
 
   @Test
-  void environmentQuotaIsSharedAcrossActorsWithoutConsumingOnRejection() {
+  void environmentQuotaIsSharedAcrossActorsWithoutConsumingOnRejection() throws Exception {
     var a = actor();
     var b = actor();
+    var c = actor();
     fund(a, UUID.randomUUID());
     var env = quota.environment();
     LocalDate day = now.get().atOffset(ZoneOffset.UTC).toLocalDate();
+    // Isolated quota-only boundary fixture; no balance or ledger seed is created.
     owner.update(
-        "UPDATE funding_quotas SET spent=50000000 WHERE scope='ENVIRONMENT' AND subject=? AND utc_date=?",
+        "UPDATE funding_quotas SET spent=49900000 WHERE scope='ENVIRONMENT' AND subject=? AND utc_date=?",
         env.epoch(),
         day);
+    var pool = Executors.newFixedThreadPool(2);
     try {
-      var result = fund(b, UUID.randomUUID());
-      assertThat(result.error().get("code")).isEqualTo("ENVIRONMENT_QUOTA_EXCEEDED");
-      assertThat(balance(b)).isZero();
-      assertThat(quota.capabilities(b.id()).userRemaining()).isEqualTo("500000");
+      var results =
+          pool.invokeAll(
+              List.<Callable<CommandStore.Terminal>>of(
+                  () -> fund(b, UUID.randomUUID()), () -> fund(c, UUID.randomUUID())));
+      var values = List.of(results.get(0).get(), results.get(1).get());
+      assertThat(values.stream().filter(r -> r.status().equals("SUCCEEDED"))).hasSize(1);
+      assertThat(
+              values.stream()
+                  .filter(
+                      r -> r.error().getOrDefault("code", "").equals("ENVIRONMENT_QUOTA_EXCEEDED")))
+          .hasSize(1);
+      assertThat(balance(b) + balance(c)).isEqualTo(100000);
     } finally {
+      pool.shutdownNow();
       owner.update(
-          "UPDATE funding_quotas SET spent=100000 WHERE scope='ENVIRONMENT' AND subject=? AND utc_date=?",
+          "UPDATE funding_quotas SET spent=200000 WHERE scope='ENVIRONMENT' AND subject=? AND utc_date=?",
           env.epoch(),
           day);
     }
@@ -236,18 +248,19 @@ class FundingIntegrationTest {
   }
 
   @Test
-  void rollbackAfterAuditLeavesNoMoneyQuotaCommandOrAudit() {
+  void rollbackAfterAuditLeavesNoMoneyQuotaCommandOrAudit() throws Exception {
     var a = actor();
     UUID key = UUID.randomUUID();
     long journals = count("ledger_transactions"), events = count("audit_events");
     doAnswer(
             i -> {
               i.callRealMethod();
-              throw new IllegalStateException("injected after money audit");
+              throw new org.springframework.dao.DataIntegrityViolationException(
+                  "injected after money audit");
             })
         .when(targetAudit())
         .money(eq(a.id()), any(), any(), any());
-    assertThatThrownBy(() -> fund(a, key)).isInstanceOf(IllegalStateException.class);
+    assertThat(fundHttp(a, key.toString(), input()).getResponse().getStatus()).isEqualTo(500);
     assertThat(balance(a)).isZero();
     assertThat(count("ledger_transactions")).isEqualTo(journals);
     assertThat(count("audit_events")).isEqualTo(events);
@@ -494,6 +507,57 @@ class FundingIntegrationTest {
                       }))
           .isInstanceOf(RuntimeException.class);
     }
+    for (long amount : List.of(0L, 1L)) {
+      assertThatThrownBy(
+              () ->
+                  tx.execute(
+                      s -> {
+                        UUID id = UUID.randomUUID();
+                        db.update(
+                            "INSERT INTO ledger_transactions(id,operation_type,operation_id,currency) VALUES(?,'INVALID',?,'VND')",
+                            id,
+                            UUID.randomUUID());
+                        db.update(
+                            "INSERT INTO ledger_entries(id,transaction_id,account_id,currency,amount) VALUES(?,?,?,'VND',?)",
+                            UUID.randomUUID(),
+                            id,
+                            account,
+                            amount);
+                        db.update(
+                            "INSERT INTO ledger_entries(id,transaction_id,account_id,currency,amount) VALUES(?,?,?,'VND',-2)",
+                            UUID.randomUUID(),
+                            id,
+                            issuance);
+                        return null;
+                      }))
+          .isInstanceOf(RuntimeException.class);
+    }
+    assertThatThrownBy(
+            () ->
+                owner.update(
+                    "UPDATE ledger_entries SET amount=amount WHERE transaction_id=?", journal))
+        .isInstanceOf(org.springframework.dao.DataAccessException.class);
+    assertThatThrownBy(
+            () ->
+                tx.execute(
+                    state -> {
+                      UUID id = UUID.randomUUID();
+                      db.update(
+                          "INSERT INTO ledger_transactions(id,operation_type,operation_id,currency) VALUES(?,'DB_OVERFLOW',?,'VND')",
+                          id,
+                          UUID.randomUUID());
+                      db.update(
+                          "INSERT INTO ledger_entries(id,transaction_id,account_id,currency,amount) VALUES(?,?,?,'VND',?)",
+                          UUID.randomUUID(),
+                          id,
+                          issuance,
+                          Long.MIN_VALUE);
+                      return null;
+                    }))
+        .isInstanceOfSatisfying(
+            org.springframework.dao.DataAccessException.class,
+            error ->
+                assertThat(((SQLException) error.getRootCause()).getSQLState()).isEqualTo("22003"));
     healthy();
   }
 
@@ -512,6 +576,35 @@ class FundingIntegrationTest {
         .isInstanceOfSatisfying(
             ApiFailure.class, e -> assertThat(e.code()).isEqualTo("FUNDING_DISABLED"));
     assertThat(count("money_commands")).isEqualTo(before);
+    healthy();
+  }
+
+  @Test
+  void reconciliationCliReturnsNonzeroForFindingsWithoutEditingMoney() throws Exception {
+    var script = java.nio.file.Path.of("infra/reconcile.sql").toAbsolutePath();
+    if (!java.nio.file.Files.exists(script))
+      script = java.nio.file.Path.of("../infra/reconcile.sql").toAbsolutePath();
+    pg.copyFileToContainer(
+        org.testcontainers.utility.MountableFile.forHostPath(script), "/tmp/reconcile.sql");
+    var healthyRun =
+        pg.execInContainer(
+            "psql", "-U", "nexapay_app", "-d", "nexapay", "-f", "/tmp/reconcile.sql");
+    assertThat(healthyRun.getExitCode()).isZero();
+    String definition =
+        owner.queryForObject(
+            "SELECT pg_get_functiondef('reconciliation_findings()'::regprocedure)", String.class);
+    try {
+      // Isolated harness substitutes findings only; no ledger/projection is mutated.
+      owner.execute(
+          "CREATE OR REPLACE FUNCTION reconciliation_findings() RETURNS TABLE(check_name TEXT,resource_id TEXT) LANGUAGE SQL STABLE AS $$ SELECT 'fixture'::text,'fixture'::text $$");
+      var failedRun =
+          pg.execInContainer(
+              "psql", "-U", "nexapay_app", "-d", "nexapay", "-f", "/tmp/reconcile.sql");
+      assertThat(failedRun.getExitCode()).isNotZero();
+      assertThat(failedRun.getStdout()).contains("fixture");
+    } finally {
+      owner.execute(definition);
+    }
     healthy();
   }
 }
