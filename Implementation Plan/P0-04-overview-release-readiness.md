@@ -1,7 +1,7 @@
 # P0-04 — Overview và nghiệm thu Wallet MVP
 
 **Ngày:** 02/11/2026  
-**Trạng thái:** LOCAL VERIFIED — 50 backend / 26 frontend unit / 22 E2E; chờ hosted CI trước khi đóng P0 DoD.
+**Trạng thái:** VERIFIED — local và GitHub Actions ngày 02/11/2026; P0 Wallet MVP DoD closed (50 backend / 26 frontend unit / 22 E2E).
 
 **Goal:** Hoàn thiện các yêu cầu Overview còn thiếu, đối chiếu P0 DoD và tạo
 điểm bàn giao rõ ràng trước P1a.
@@ -116,10 +116,10 @@ Backend `GET /api/v1/transactions` đã nhận limit 1..100 và sort createdAt/i
 - [x] Đóng gói Compose bản mới không reset volume; chạy `npm run test:e2e` against
   runtime, `node infra/runtime-smoke.mjs` và `infra/reconcile.sql` theo README.
   Expected connected journey pass, findings=0; không claim public deployment.
-- [ ] Review các thay đổi thực tế, sửa findings quan trọng; cập nhật Docs/README,
+- [x] Review các thay đổi thực tế, sửa findings quan trọng; cập nhật Docs/README,
   plan, commit/push theo authorization của phiên thực thi và xác nhận hosted CI.
-- [ ] Chỉ mark P0-04 VERIFIED/P0 gate closed khi mọi acceptance có evidence mới.
-- [ ] Commit: `docs: close P0 wallet MVP acceptance evidence`.
+- [x] Chỉ mark P0-04 VERIFIED/P0 gate closed khi mọi acceptance có evidence mới.
+- [x] Commit: `docs: close P0 wallet MVP acceptance evidence`.
 
 ## 5. Review focus
 
@@ -202,7 +202,8 @@ không phải prerequisite của kế hoạch này.
 
 Đối chiếu đúng 10 điều tại PRD mục 13. Các suite backend bên dưới đã chạy lại
 trên PostgreSQL Testcontainers trong P0-04; không chỉ dẫn số liệu P0-03 cũ.
-Kết quả release cuối cùng phụ thuộc toàn bộ local gates và hosted CI mục 9.
+**Kết luận: 10/10 điều kiện PASSED**, theo local gates và hosted CI mục 9.
+Đây là nghiệm thu P0 mô phỏng theo baseline, không phải claim production-ready.
 
 | # | Điều kiện PRD | Evidence thực thi | Kết luận |
 |---|---|---|---|
@@ -212,7 +213,7 @@ Kết quả release cuối cùng phụ thuộc toàn bộ local gates và hosted
 | 4 | Thiếu tiền, self, LOCKED không đổi tiền | `TransferIntegrationTest.schemaCsrfAndBusinessRejectionsNeverMoveMoney`, immutable failure/replay, recipient lock race; funding locked replay. `OverviewActions.test.tsx` và controlled GET LOCKED kiểm UI, không dùng làm evidence DB lock | PASSED backend + 3 actions unit tests |
 | 5 | Duplicate và overspend | 20 same keys → một posting; 20 distinct keys từ 100000 chuyển 10000 → đúng 10 success; A↔B không deadlock trong `TransferIntegrationTest` | PASSED |
 | 6 | Desktop/mobile, loading/error/success/review/detail | `frontend/e2e/overview.spec.ts` bổ sung recent, independent fetch/error/retry, failed unsigned amount, actor switch/late result; giữ funding/identity/transfer suites; axe, 320px và zoom smoke | PASSED local: 22/22 E2E, axe/reflow/zoom, visual QA |
-| 7 | Validation/authz/migration/integration/CI | Full 50 backend tests gồm schema/CSRF/ownership/roles/guards, Flyway V1–V3; strict frontend/lint/unit/build; CI dùng cùng commands và PostgreSQL thật | Local backend/frontend PASSED; hosted CI pending |
+| 7 | Validation/authz/migration/integration/CI | Full 50 backend tests gồm schema/CSRF/ownership/roles/guards, Flyway V1–V3; strict frontend/lint/unit/build; CI dùng cùng commands và PostgreSQL thật | PASSED local + hosted CI |
 | 8 | Docker/local tái lập, không secret thật | Compose config/build/up image mới giữ volume; frontend được bundle trong JAR; runtime smoke fresh restart/replay; README commands và `.env.example` local-only, không seed tài khoản/balance | PASSED local packaging/runtime |
 | 9 | MM-01–08, audit/reconciliation/app-role guards | Full funding/transfer tests: audit fault rollback, immutable journal/overflow, quota/concurrency/timeout; snapshot across commit, orphan fixture rollback, CLI fixture exit nonzero; runtime CLI sau E2E | PASSED: MM-01–08, CLI runtime 0 findings |
 | 10 | Session/CSRF/logout/recovery/cache isolation | Identity session/CSRF/logout tests; funding/transfer E2E lost response/re-auth/reload/original-key/manual retry; command/money-cache unit; RecentActivity late actor test và Overview late committed response | PASSED: backend + 26 unit + 22 E2E |
@@ -246,7 +247,9 @@ các regression đó, không thay money rules hoặc migrations.
 - Runtime read-only `infra/reconcile.sql` sau full E2E: **0 findings**, exit 0,
   `.tools/p004/reconcile-final.log`. Fixture corruption/nonzero được full backend
   kiểm trong transaction rollback; không sửa tiền production/runtime.
-- Hosted CI: pending; chỉ mark P0 DoD closed sau khi run mới thành công.
+- Markdown QA: 3 changed documents / 50 local links+case và balanced fences;
+  7 frontend dist files byte-identical trong packaged JAR; `git diff --check` pass.
+- Hosted CI: PASSED theo run dưới đây; P0 DoD đã đóng sau khi tất cả gates pass.
 
 ### Giới hạn được baseline chấp nhận
 
@@ -256,3 +259,26 @@ LOCKED UI fixture chỉ kiểm giao diện; lock/atomicity thật được backe
 kiểm độc lập. CSS zoom 200% là smoke trong Chromium, không phải chứng nhận
 accessibility hay kiểm mọi thiết bị. Chưa có public hosting/throughput/p95.
 P1a merchant/payment/refund tiếp tục là roadmap, chưa implement trong P0-04.
+
+
+### Hosted verification — P0 DoD closed
+
+**PASSED:** [GitHub Actions 41402042152](https://github.com/anhkhuong04/NexaPay/actions/runs/41402042152),
+branch `main`, commit `835b70f6d8d2ba5f5e5a2d1a6df5af090fc0b125`.
+
+- Frontend npm ci/format/lint: PASS; **26/26** unit tests, 8 files; strict build
+  PASS; audit **0 vulnerabilities**.
+- PostgreSQL integration/package: **50/50**, 0 failures/errors/skips; BUILD SUCCESS.
+- Packaged SPA/API + restart/session + persisted P2P lookup/replay/history + default
+  Secure/HttpOnly/Lax cookie: PASS.
+- Connected desktop/mobile: **22/22**, 1.5m; recent limit/order/amount semantics,
+  independent errors/retry, actor switch, late response, controlled LOCKED,
+  keyboard/recovery, axe/320px/zoom smoke đều pass.
+- Reconciliation snapshot sau E2E: **0 findings**, PASS; verification artifact upload
+  PASS. Không có failing/skipped release gates hoặc unresolved review findings.
+- Milestones: `5c3403b` recent activity, `459814d` wallet actions, `c7b66c5` connected
+  journeys/settled contrast, `835b70f` local evidence. Commit tài liệu cuối chỉ
+  đóng trạng thái/evidence sau hosted success, không thay runtime.
+- Đã fast-forward và push `main` theo authorization của user. Compose mới phục vụ
+  tại `http://127.0.0.1:18082`, giữ nguyên database/volume. P0-04 hoàn tất;
+  bước tiếp theo là plan chi tiết **P1a-01 Merchant onboarding & wallet** theo mục 6.

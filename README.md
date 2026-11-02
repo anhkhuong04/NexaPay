@@ -10,7 +10,9 @@ chuyển tiền P2P và lịch sử/chi tiết có phân quyền; evidence nghi�
 [plan P0-03](<Implementation Plan/P0-03-p2p-history.md>). P0-04 bổ sung 5 giao dịch
 mới nhất trên Tổng quan, quick actions theo trạng thái ví và
 [ma trận nghiệm thu P0](<Implementation Plan/P0-04-overview-release-readiness.md>).
-Local gates: 50 backend, 26 frontend unit, 22 desktop/mobile E2E; hosted CI đang xác minh.
+P0 Wallet MVP đã nghiệm thu local và
+[GitHub Actions](https://github.com/anhkhuong04/NexaPay/actions/runs/41402042152):
+50 backend, 26 frontend unit, 22 desktop/mobile E2E; reconciliation 0 findings.
 
 ## Chạy local
 
