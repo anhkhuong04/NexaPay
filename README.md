@@ -90,7 +90,7 @@ trong [.github/workflows/ci.yml](.github/workflows/ci.yml).
 
 Từ root, `node infra/runtime-smoke.mjs` tự khởi động/dừng JAR ở cổng 18081 để
 kiểm tra SPA/API routing, session mất hiệu lực sau restart, kết quả P2P/lookup/
-replay/history vẫn còn và cookie
+replay/history cùng merchant/wallet/membership vẫn còn và cookie
 Secure mặc định. Cần `.env`, database đang chạy và JAR đã bundle SPA. Script tạo
 tài khoản giả riêng; không reset database. Có thể đổi `SMOKE_PORT` nếu cần.
 Nếu app chạy ở cổng khác, đặt `E2E_BASE_URL` tương ứng trước khi chạy E2E.
@@ -176,3 +176,28 @@ newest-first cursor có tie-break UUID. Người nhận chỉ thấy incoming SU
 FAILED chỉ người gửi, tài khoản khác nhận 404. Detail không chứa email/command key.
 CLI reconciliation kiểm tra cả funding và P2P, projection/journal/linkage/quota/
 issuance trong snapshot read-only; findings không được sửa tự động.
+
+
+## Merchant onboarding & wallet — P1a-01
+
+Sau khi đăng nhập, chọn “Doanh nghiệp” trong workspace switcher và nhập tên giả.
+Onboarding tạo merchant ACTIVE, OWNER membership và ví merchant 0 VND trong cùng
+transaction với audit. Một user chỉ có một merchant; request trùng trả 409 và
+không tạo thêm ví. Nếu mất response, dùng “Kiểm tra doanh nghiệp đã tạo” để đọc
+kết quả đã lưu trước khi gửi lại; reload không tự tạo merchant.
+
+Business Overview đọc ví merchant riêng; Settings cho đổi tên doanh nghiệp. Có
+thể chuyển lại “Ví cá nhân” bất kỳ lúc nào. `/wallets/me`, funding/P2P và lịch sử
+P0 vẫn thuộc personal workspace; ví merchant không nhận tiền demo hoặc P2P. API
+business luôn kiểm OWNER membership từ database, không dùng role/ownerId client.
+Session summary phản ánh membership ngay sau onboarding và sau đăng nhập lại;
+không cấp ADMIN. Không có KYC/staff/multi-merchant trong baseline.
+
+V4 migration nâng cấp dữ liệu P0, giữ IDs/ledger/history; không sửa V1–V3 hoặc
+reset volume. Runtime vẫn không được sửa posted_balance trực tiếp; MERCHANT có
+cùng nonnegative/max balance guard với PERSONAL. Reconciliation bổ sung kiểm
+merchant ownership/account type và giữ toàn bộ checks funding/P2P/quota/issuance.
+
+Payment requests/checkout/refund tiếp tục ở P1a-02/03; P1a-01 chỉ bàn giao
+onboarding/profile/wallet. Xem [plan/evidence](<Implementation Plan/P1a-01-merchant-wallet.md>),
+[OpenAPI](Docs/api/p1a-01.openapi.yaml) và [UI states](Docs/ui/P1a-01-merchant-wireframes.md).

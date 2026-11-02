@@ -1,4 +1,4 @@
-name: P0 wallet funding and P2P
+name: NexaPay wallet and merchant
 on:
   push:
   pull_request:

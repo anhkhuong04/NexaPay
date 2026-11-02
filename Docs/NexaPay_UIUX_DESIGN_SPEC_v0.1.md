@@ -48,7 +48,9 @@
 | Wallet | `/app/profile` | Profile & Settings | P0 |
 | Wallet | `/app/deposit` / `/app/withdraw` | Mock Bank flows | P1c |
 | Public/Wallet | `/pay/:paymentId` | Merchant Checkout | P1a |
+| Business | `/business/onboarding` | Merchant self-onboarding | P1a-01 |
 | Business | `/business/overview` | Business Overview | P1a |
+| Business | `/business/settings` | Owned merchant profile | P1a-01 |
 | Business | `/business/payment-requests` | Payment Request list | P1a |
 | Business | `/business/payment-requests/new` | Create Payment Request | P1a |
 | Business | `/business/payment-requests/:id` | Payment Details + share QR/link | P1a |
@@ -270,6 +272,11 @@ flowchart TD
 ## 6. Screen Specifications — P1a Business / Checkout và P1c Mock Bank
 
 ### UI-09 — Business Overview
+
+P1a-01 là increment onboarding/profile/wallet: chỉ hiển thị số dư ví thật và
+merchant metadata. KPI payments/refunds/requests và CTA dưới đây được mở ở slice
+payment/refund khi có API tương ứng; không render số liệu/control giả. Onboarding
+và settings states xem [P1a-01 merchant](ui/P1a-01-merchant-wireframes.md).
 
 - KPI cards: current merchant wallet balance, successful payments today, pending requests, refunds (data nghĩa được ghi rõ, không tự gộp gross revenue với balance).
 - Chart trends optional, không thay thế list recent payments.

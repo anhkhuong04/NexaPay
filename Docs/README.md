@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-01  
 **Updated:** 2026-11-02  
-**Status:** Accepted design baseline; P0-01–04 VERIFIED local và GitHub Actions (50 backend, 26 frontend unit, 22 E2E). P0 Wallet MVP DoD closed; P1a merchant/payment/refund chưa triển khai.
+**Status:** Accepted design baseline; P0-01–04 VERIFIED local và GitHub Actions (50 backend, 26 frontend unit, 22 E2E). P0 Wallet MVP DoD closed; P1a-01 merchant onboarding/wallet đang nghiệm thu; payment/checkout/refund chưa triển khai.
 
 ## Đọc theo thứ tự
 
@@ -42,6 +42,7 @@ Thông tin kế hoạch chưa có: số giờ/tuần, hạn portfolio, ngân sá
 | P0-02 Funding & Commands | [Implementation và acceptance evidence](<../Implementation Plan/P0-02-demo-funding.md>) | VERIFIED; [CI passed](https://github.com/anhkhuong04/NexaPay/actions/runs/41391311765) |
 | P0-03 P2P & History | [Implementation và acceptance evidence](<../Implementation Plan/P0-03-p2p-history.md>) | VERIFIED — 50 backend/17 frontend/16 E2E; [CI passed](https://github.com/anhkhuong04/NexaPay/actions/runs/41397070504) |
 | P0-04 Overview & Release Readiness | [Đánh giá tiến độ và implementation plan tiếp theo](<../Implementation Plan/P0-04-overview-release-readiness.md>) | VERIFIED — 50 backend/26 frontend unit/22 E2E; P0 DoD closed; [CI passed](https://github.com/anhkhuong04/NexaPay/actions/runs/41402042152); kèm roadmap P1a |
+| P1a-01 Merchant & Wallet | [Plan và execution evidence](<../Implementation Plan/P1a-01-merchant-wallet.md>) | LOCAL VERIFIED — 60 backend/34 frontend unit/28 E2E; hosted CI pending |
 
 ## Artifacts implementation
 
@@ -49,6 +50,7 @@ Thông tin kế hoạch chưa có: số giờ/tuần, hạn portfolio, ngân sá
 - [Wireframes/state flow](ui/P0-01-wireframes.md): screens/states P0-01.
 - [OpenAPI P0-02](api/p0-02.openapi.yaml), [funding/recovery wireframes](ui/P0-02-funding-wireframes.md) và [reconciliation CLI](../infra/reconcile.sql).
 - [OpenAPI P0-03](api/p0-03.openapi.yaml) và [P2P/history wireframes](ui/P0-03-p2p-history-wireframes.md).
+- [OpenAPI P1a-01](api/p1a-01.openapi.yaml) và [merchant states](ui/P1a-01-merchant-wireframes.md).
 - [Setup và verification](../README.md): commands thật và giới hạn runtime.
 
 ## Làm việc với agent

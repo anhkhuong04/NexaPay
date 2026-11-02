@@ -1,6 +1,6 @@
 # P1a-01 — Merchant states and ownership
 
-**02/11/2026 — Implementation contract, runtime verification pending.**
+**02/11/2026 — Implementation local verified; hosted CI evidence tracked in slice plan.**
 
 Routes: `/business/onboarding`, `/business/overview`, `/business/settings`.
 Workspace switcher ở sidebar, dùng link có tên hiển thị. Business nav chỉ Overview

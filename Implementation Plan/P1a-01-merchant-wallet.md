@@ -2,7 +2,7 @@
 
 **Ngày:** 02/11/2026
 
-**Trạng thái:** IN PROGRESS; base `e940697`, branch `feat/p1a-01-merchant-wallet`.
+**Trạng thái:** LOCAL VERIFIED — 60 backend / 34 frontend unit / 28 E2E; hosted CI pending; base `e940697`, branch `feat/p1a-01-merchant-wallet`.
 
 ## Goal và baseline
 
@@ -48,7 +48,7 @@ Không KYC/staff/multi-merchant, payment/refund/Console/API khóa ví hoặc see
 - [x] 2. Fluent typed API/routes/workspace navigation; focused behavioral unit tests,
   no actor/merchant cache mixing; connected onboarding→business→rename→personal,
   reload/re-auth, duplicate/lost response recovery. Commit UI milestone.
-- [ ] 3. Full backend PostgreSQL `./backend/mvnw.cmd -B -ntp -f backend/pom.xml -Pweb verify`;
+- [x] 3. Full backend PostgreSQL `./backend/mvnw.cmd -B -ntp -f backend/pom.xml -Pweb verify`;
   frontend format/lint/test/build/audit. Compose config/build/up giữ volume; full
   desktop/mobile E2E/axe/reflow, packaged runtime smoke, reconciliation 0 findings.
 - [ ] 4. Review actual diff, migration upgrade từ V3 có dữ liệu; cập nhật OpenAPI,
@@ -104,3 +104,59 @@ Không KYC/staff/multi-merchant, payment/refund/Console/API khóa ví hoặc see
   BUILD SUCCESS, 2m19s (`.tools/p1a01/backend-full.log`). Compiled SpaController có
   business deep links; 7 frontend dist files byte-identical trong JAR. Packaged
   restart smoke hiện đang chạy; chỉ mark release sau output PASS và hosted CI.
+
+
+## Acceptance evidence — local
+
+| Gate | Evidence | Result |
+|---|---|---|
+| FR-M01 / BR-02 | Onboarding ACTIVE + one OWNER + separate zero wallet, personal ID/balance unchanged; audit atomically stored, no opening journal | PASSED |
+| Concurrency / rollback | 8 concurrent onboarding requests → one 201 / seven 409; one account/membership, no orphans; audit failure rolls back create and rename | PASSED |
+| FR-A04 / BR-20 | Unrelated read/update/wallet 404; 401/CSRF/strict JSON; owner/role/status/balance overposting rejected; no ADMIN grant | PASSED |
+| BR-04/05 / MM regression | MERCHANT Java+DB customer limits, app role balance/status edits denied; wrong wallet kind/incomplete graph fail deferred commit; full P0 MM-01–08 suites retained | PASSED |
+| Personal boundary | Merchant recipient lookup absent; P2P into merchant returns FAILED/RECIPIENT_NOT_FOUND, no debit; funding only credits personal | PASSED |
+| Migration | V3 fixture→V4 preserves IDs/audit/checksums; existing local accounts/balances/wallet ownership/journal+audit counts identical across upgrade | PASSED |
+| Session/workspace | Current membership appears in summary without re-login; APIs authorize membership each request; business/personal cache keys separate, late result actor guard | PASSED |
+| Business UI | Create/rename/reload/personal↔business, keyboard Enter, loss-after-commit GET recovery/no double POST, 401 re-auth, actor switch privacy; pending/error/LOCKED fixture | PASSED |
+| Accessibility / visuals | Desktop 1440/mobile 390, 320px reflow, CSS zoom 200% smoke, axe WCAG2/2.1/2.2 tags; final screenshots viewed; controls/UUID/name wrap | PASSED |
+| Packaged runtime / reconciliation | Clean JAR business deep links, restart invalidation, persisted merchant/wallet/roles + existing P2P replay/history; read-only reconciliation 0 findings | PASSED |
+
+### Commands / reports
+
+- `./backend/mvnw.cmd -B -ntp -f backend/pom.xml -Pweb clean verify`:
+  **60/60**, 0 failures/errors/skips, 2m19s; Spotless PASS;
+  `backend/target/surefire-reports/`, `.tools/p1a01/backend-full.log`.
+- Frontend `npm run test`: **34/34**, 10 files. Format/lint/strict build PASS;
+  npm audit **0 vulnerabilities**. `.tools/p1a01/unit.log`, `format.log`, `lint.log`,
+  `build.log`, `audit.log`.
+- Connected full `E2E_BASE_URL=http://127.0.0.1:18082 npm run test:e2e`:
+  **28/28**, 3.2m. Final business layout rerun **6/6**, 1.1m;
+  `.tools/p1a01/e2e-full.log`, `e2e-visual-final.log`; reports/screenshots ignored.
+- Compose config/build/up PASS; V1–V3 source unchanged, no reset/repair/seed.
+  `.tools/p1a01/upgrade-result.log`, `docker-visual-final.log`.
+- `node infra/runtime-smoke.mjs`: **PASS** after clean verify;
+  `.tools/p1a01/runtime-final.log`. Local stale artifact failure described above
+  is resolved and does not substitute for this passing run.
+- `infra/reconcile.sql`: **0 findings**, exit 0 after E2E and runtime smoke;
+  `.tools/p1a01/reconcile-final.log`. All prior snapshot/quota/command checks retained,
+  plus merchant graph/account type. Fault fixture nonzero covered by backend suite.
+- YAML: 4 OpenAPI files / 119 refs resolve, CI parses; 5 changed Markdown files /
+  53 local links+case/fences pass. JAR matches all 7 frontend dist files, compiled
+  controller contains business deep links. Self-review found no remaining important
+  issue; this is not independent reviewer approval.
+- Milestones: `7cead35` migration/API/DB tests/contracts, `d181d8b` business UI and
+  connected recovery. Hosted CI pending before final VERIFIED status.
+
+### Limits / next slice
+
+Simulated VND only, one backend instance, session memory and local Compose; no
+public deployment/performance claim. LOCKED browser case is a controlled GET
+fixture, real DB lock/guards verified separately. CSS zoom/axe are measured smoke
+checks, not certification or every browser/device. No payment/refund operations
+in this slice, so **P1a overall and MM-09 remain pending**.
+
+Next: **P1a-02 — Payment Request & Checkout**. Plan request/attempt/payment schemas
+and immutable amounts/expiry, one capture, self-payment exclusion, cancel/expire/pay
+serialization, owned business queries + payer review/recovery and reconciliation.
+Use MERCHANT account capability/OWNER membership introduced here; no arbitrary
+P2P/funding into merchant. P1a-03 follows for full/partial refund and MM-09.
