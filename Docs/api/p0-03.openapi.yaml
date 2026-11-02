@@ -270,7 +270,7 @@ components:
           const: VND
         note:
           type: string
-          maxLength: 140
+          maxLength: 560
           description: NFC then strip, max 140 code points, no controls; omitted equals
             empty.
     Command:

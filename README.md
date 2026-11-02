@@ -5,8 +5,9 @@ Ví VND mô phỏng dùng Java 21 / Spring Boot, PostgreSQL và React / Fluent U
 
 P0-01 triển khai đăng ký và tạo ví 0 VND atomic, đăng nhập/session/CSRF, xem ví,
 sửa tên hiển thị và đăng xuất. P0-02 bổ sung funding 100.000 VND có quota,
-ledger/idempotency atomic, tra cứu kết quả và reconciliation CLI. Chuyển tiền và
-lịch sử giao dịch thuộc slice tiếp theo; **chưa hoàn thành toàn bộ P0**.
+ledger/idempotency atomic, tra cứu kết quả và reconciliation CLI. P0-03 bổ sung
+chuyển tiền P2P và lịch sử/chi tiết có phân quyền; evidence nghiệm thu trong
+[plan P0-03](<Implementation Plan/P0-03-p2p-history.md>).
 
 ## Chạy local
 
@@ -83,7 +84,8 @@ Backend reports tại `backend/target/surefire-reports/`. CI định nghĩa cùn
 trong [.github/workflows/ci.yml](.github/workflows/ci.yml).
 
 Từ root, `node infra/runtime-smoke.mjs` tự khởi động/dừng JAR ở cổng 18081 để
-kiểm tra SPA/API routing, session mất hiệu lực sau restart, ví vẫn còn và cookie
+kiểm tra SPA/API routing, session mất hiệu lực sau restart, kết quả P2P/lookup/
+replay/history vẫn còn và cookie
 Secure mặc định. Cần `.env`, database đang chạy và JAR đã bundle SPA. Script tạo
 tài khoản giả riêng; không reset database. Có thể đổi `SMOKE_PORT` nếu cần.
 Nếu app chạy ở cổng khác, đặt `E2E_BASE_URL` tương ứng trước khi chạy E2E.
@@ -121,7 +123,8 @@ Mỗi intent dùng một UUID Idempotency-Key. 201 thành công hoặc 422 từ 
 technical rollback không tạo FAILED operation. Sau timeout/re-auth/reload, tra cứu
 cùng mã ở màn funding hoặc “Thao tác đã lưu”; 404 chưa quan sát được không chứng
 minh thất bại. Reload không tự POST, logout/xuất sang actor khác xoá context; re-auth
-cùng actor giữ reference để lookup. Draft tiền chỉ nằm trong memory.
+cùng actor giữ reference để lookup. Draft tiền giữ trong memory qua re-auth cùng
+actor để retry thủ công đúng key/payload; reload mất draft, chỉ còn lookup.
 
 CLI read-only, REPEATABLE READ snapshot, không repair; findings trả exit khác 0:
 
@@ -143,3 +146,26 @@ cho transfer khi triển khai P0-03. Không xoá volume hay sửa balance để 
 - [OpenAPI funding/commands](Docs/api/p0-02.openapi.yaml)
 - [Wireframes và trạng thái UI](Docs/ui/P0-01-wireframes.md)
 - [Quy tắc agent](AGENTS.md)
+
+## Chuyển tiền và lịch sử P0-03
+
+Người nhận chia sẻ mã ví UUID từ Tổng quan. Mở “Chuyển tiền”, tra cứu đúng mã,
+kiểm tra tên/ví nhận rồi nhập số tiền và lời nhắn. Chỉ bước “Xác nhận chuyển” gửi
+lệnh; phí 0 VND, số tiền 1..100.000.000 VND, total balance tối đa
+1.000.000.000.000 VND. Input nhận digits hoặc grouping chấm vi-VN (`10.000`),
+không chấp nhận dấu phẩy/thập phân/exponent. Lời nhắn NFC/trim, tối đa 140 Unicode
+code points, không control characters. Không dùng email để tra cứu người nhận.
+
+Server xác định ví gửi từ session, khóa hai accounts theo UUID, kiểm tra trạng
+thái/số dư và ghi hai ledger entries cùng transaction với command/audit. Self,
+recipient không tồn tại, ví LOCKED, thiếu số dư hoặc vượt balance limit là 422
+FAILED đã lưu; thêm tiền/unlock không thay kết quả cũ. Lỗi kỹ thuật rollback,
+không giả FAILED. Throttle chung funding/P2P 30 requests/phút/actor; lookup người
+nhận có bucket riêng 30/phút. Runtime vẫn không có quyền sửa posted_balance.
+
+“Lịch sử giao dịch” lọc incoming/outgoing/funding, status và ngày UTC (hai ngày
+inclusive trên UI, API `[from,to)`). Timestamp hiển thị local kèm timezone;
+newest-first cursor có tie-break UUID. Người nhận chỉ thấy incoming SUCCEEDED;
+FAILED chỉ người gửi, tài khoản khác nhận 404. Detail không chứa email/command key.
+CLI reconciliation kiểm tra cả funding và P2P, projection/journal/linkage/quota/
+issuance trong snapshot read-only; findings không được sửa tự động.

@@ -38,20 +38,20 @@ async function stop() {
     const closed = once(child, 'exit'); child.kill('SIGTERM'); await closed;
   }
 }
-async function request(path, method = 'GET', body, token) {
+async function request(path, method = 'GET', body, token, key) {
   const response = await fetch(base + path, {
     method, headers: { ...(cookie ? { Cookie: cookie } : {}),
       ...(body ? { 'Content-Type': 'application/json' } : {}),
-      ...(token ? { 'X-CSRF-TOKEN': token } : {}) },
+      ...(token ? { 'X-CSRF-TOKEN': token } : {}), ...(key ? { 'Idempotency-Key': key } : {}) },
     body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(10000),
   });
   for (const entry of response.headers.getSetCookie())
     if (entry.startsWith('JSESSIONID=')) cookie = entry.split(';')[0];
   return response;
 }
-async function mutate(path, body) {
+async function mutate(path, body, key) {
   const csrf = await request('/api/v1/auth/csrf'); assert.equal(csrf.status, 200);
-  return request(path, 'POST', body, (await csrf.json()).token);
+  return request(path, 'POST', body, (await csrf.json()).token, key);
 }
 try {
   await start(true);
@@ -61,6 +61,19 @@ try {
   assert.equal((await mutate('/api/v1/auth/login', credentials)).status, 200);
   const original = await (await request('/api/v1/wallets/me')).json();
   assert.equal(original.availableBalance, '0');
+  const recipient = { email: `restart-recipient-${Date.now()}@example.test`, password: 'Demo-wallet-2026!' };
+  assert.equal((await mutate('/api/v1/auth/register', {...recipient, displayName: 'Runtime recipient'})).status, 201);
+  assert.equal((await mutate('/api/v1/auth/login', recipient)).status, 200);
+  const destination = await (await request('/api/v1/wallets/me')).json();
+  assert.equal((await mutate('/api/v1/auth/login', credentials)).status, 200);
+  assert.equal((await mutate('/api/v1/demo-fundings', {amount:'100000',currency:'VND'}, crypto.randomUUID())).status, 201);
+  const transferKey=crypto.randomUUID();
+  const transferBody={destinationWalletId:destination.id,amount:'10000',currency:'VND',note:'Restart recovery'};
+  const transferResponse=await mutate('/api/v1/transfers',transferBody,transferKey);
+  assert.equal(transferResponse.status,201); const transfer=await transferResponse.json();
+  for (const route of ['/app/send','/app/transactions',`/app/transactions/TRANSFER/${transfer.resourceId}`]) {
+    const response=await request(route); assert.equal(response.status,200); assert.match(response.headers.get('content-type'),/text\/html/);
+  }
   const missing = await request('/api/v1/unknown'); assert.equal(missing.status, 404);
   assert.match(missing.headers.get('content-type'), /application\/json/);
   const deepLink = await request('/app/profile'); assert.equal(deepLink.status, 200);
@@ -70,10 +83,14 @@ try {
   cookie = '';
   assert.equal((await mutate('/api/v1/auth/login', credentials)).status, 200);
   const restored = await (await request('/api/v1/wallets/me')).json();
-  assert.equal(restored.id, original.id); assert.equal(restored.availableBalance, '0');
+  assert.equal(restored.id, original.id); assert.equal(restored.availableBalance, '90000');
+  const lookedUp=await request(`/api/v1/commands/TRANSFER/${transferKey}`); assert.equal(lookedUp.status,200); assert.deepEqual(await lookedUp.json(),transfer);
+  const replay=await mutate('/api/v1/transfers',transferBody,transferKey); assert.equal(replay.status,201); assert.deepEqual(await replay.json(),transfer);
+  assert.equal((await (await request('/api/v1/wallets/me')).json()).availableBalance,'90000');
+  const history=await (await request('/api/v1/transactions?type=OUTGOING')).json(); assert.equal(history.items.length,1); assert.equal(history.items[0].id,transfer.resourceId);
   await stop(); cookie = ''; await start(false);
   const secure = await request('/api/v1/auth/csrf'); assert.equal(secure.status, 200);
   const header = secure.headers.getSetCookie().find(entry => entry.startsWith('JSESSIONID='));
   assert.match(header, /; Secure/i); assert.match(header, /; HttpOnly/i); assert.match(header, /SameSite=Lax/i);
-  console.log('PASS: packaged SPA/API routing, restart invalidation, persisted wallet and default Secure/HttpOnly/Lax cookie');
+  console.log('PASS: packaged SPA/API routing, restart invalidation, persisted P2P result/replay/history and default Secure/HttpOnly/Lax cookie');
 } finally { await stop(); output.end(); }
