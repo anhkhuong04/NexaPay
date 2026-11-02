@@ -58,7 +58,7 @@ Implementation Plan/
 
 Chỉ thêm `references/`, `scripts/`, `assets/` trong skill khi có nhu cầu thật. Ví dụ script kiểm chứng có ích sau khi build commands tồn tại; không tạo wrapper chỉ để gọi một command hoặc script trả success khi tool chưa được cài. Không cần README riêng cho mỗi skill hoặc bộ persona architect/backend/tester.
 
-**Tình trạng sau triển khai:** workspace có Docs/logo, Implementation Plan, root/scoped Docs instructions và project skills; chưa có backend/frontend/build manifests hoặc `.git`. Trước dùng discovery theo repo từ thư mục con, cần khởi tạo Git ở bước setup được yêu cầu và kiểm tra project root. Hiện khởi chạy agent tại workspace root. Khi task bắt đầu từ root, đọc scoped AGENTS của vùng sắp sửa; không mặc định mọi file hướng dẫn dưới root đã được nạp.
+**Lịch sử sau đợt cài skills, trước P0-01:** workspace có Docs/logo, Implementation Plan, root/scoped Docs instructions và project skills; chưa có backend/frontend/build manifests hoặc `.git`. Trước dùng discovery theo repo từ thư mục con, cần khởi tạo Git ở bước setup được yêu cầu và kiểm tra project root. Hiện khởi chạy agent tại workspace root. Khi task bắt đầu từ root, đọc scoped AGENTS của vùng sắp sửa; không mặc định mọi file hướng dẫn dưới root đã được nạp.
 
 ## 3. Nội dung root AGENTS.md
 
@@ -150,7 +150,7 @@ Mẫu là English để dùng thống nhất với identifiers/code, không ph�
 - Semantic controls, visible labels, focus, keyboard, contrast/reflow và reduced motion; kiểm thử component theo behavior, không snapshot toàn bộ markup để thay user-flow tests.
 - TypeScript strict; typed API contracts, không `any` rộng để bỏ qua sai kiểu; effects phục vụ đồng bộ với external systems, không nhân bản derived/server state.
 
-Commands cần ghi kèm working directory và điều kiện môi trường. Hiện chưa có manifests nên **không** ghi như thể `npm run lint`, `mvnw verify` hoặc một task Gradle đã tồn tại. Khi chọn build tool, thêm đúng wrapper/package scripts rồi cập nhật scoped instructions và CI cùng change.
+Commands cần ghi kèm working directory và điều kiện môi trường. Tại thời điểm đề xuất chưa có manifests nên **không** ghi như thể `npm run lint`, `mvnw verify` hoặc một task Gradle đã tồn tại. Khi chọn build tool, thêm đúng wrapper/package scripts rồi cập nhật scoped instructions và CI cùng change.
 
 ## 5. Bốn skills ban đầu
 
@@ -264,3 +264,5 @@ Tài liệu ghi lý do thiết kế developer workflow; không thay scope/quyế
 - Bốn skill folders đã pass `skill-creator/scripts/quick_validate.py`; kiểm tra thủ công phạm vi descriptions, planning/review/implementation modes và tham chiếu baseline. Chưa có independent/runtime behavioral evaluation, không tuyên bố đã kiểm chứng auto-selection trong host.
 - Không thêm scripts/assets/metadata không cần thiết; các skills instruction-only dùng nguồn dự án theo đường dẫn relative, không phụ thuộc global custom skills hoặc đường dẫn máy cá nhân.
 - Backend/frontend/infra scoped instructions và commands được thêm cùng scaffold sau này. Bộ skills không thay thế code/CI/DB guards và không đánh dấu bất kỳ P0 slice nào Done.
+
+**Cập nhật sau P0-01 (02/11/2026):** backend/frontend/infra, Git và commands đã được scaffold. Trạng thái hiện tại xem [documentation index](README.md), [setup](../README.md) và [slice evidence](<../Implementation Plan/P0-01-identity-wallet.md>); các đoạn “chưa có” ở trên là lịch sử đợt cài skills.

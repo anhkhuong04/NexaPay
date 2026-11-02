@@ -336,6 +336,11 @@ components:
           type: object
           additionalProperties:
             type: string
+      examples:
+      - code: UNAUTHENTICATED
+        message: Vui lòng đăng nhập để tiếp tục.
+        correlationId: 33333333-3333-4333-8333-333333333333
+        fieldErrors: {}
     Csrf:
       type: object
       required:
@@ -362,6 +367,9 @@ components:
           type: string
           writeOnly: true
           maxLength: 128
+      examples:
+      - email: alice@example.test
+        password: Demo-wallet-2026!
     Register:
       type: object
       additionalProperties: false
@@ -384,6 +392,10 @@ components:
           type: string
           minLength: 1
           maxLength: 80
+      examples:
+      - email: alice@example.test
+        password: Demo-wallet-2026!
+        displayName: Nguyễn An
     ProfilePatch:
       type: object
       additionalProperties: false
@@ -394,6 +406,8 @@ components:
           type: string
           minLength: 1
           maxLength: 80
+      examples:
+      - displayName: An NexaPay
     Profile:
       type: object
       required:
@@ -409,6 +423,10 @@ components:
           format: email
         displayName:
           type: string
+      examples:
+      - id: 11111111-1111-4111-8111-111111111111
+        email: alice@example.test
+        displayName: Nguyễn An
     Created:
       type: object
       required:
@@ -421,6 +439,9 @@ components:
         walletId:
           type: string
           format: uuid
+      examples:
+      - userId: 11111111-1111-4111-8111-111111111111
+        walletId: 22222222-2222-4222-8222-222222222222
     Session:
       type: object
       required:
@@ -446,6 +467,12 @@ components:
         absoluteExpiresAt:
           type: string
           format: date-time
+      examples:
+      - userId: 11111111-1111-4111-8111-111111111111
+        roles:
+        - INDIVIDUAL
+        authenticatedAt: '2026-11-02T03:00:00Z'
+        absoluteExpiresAt: '2026-11-02T11:00:00Z'
     Wallet:
       type: object
       required:
@@ -476,3 +503,10 @@ components:
         totalBalance:
           type: string
           pattern: ^(0|[1-9][0-9]*)$
+      examples:
+      - id: 22222222-2222-4222-8222-222222222222
+        currency: VND
+        status: ACTIVE
+        availableBalance: '0'
+        heldBalance: '0'
+        totalBalance: '0'

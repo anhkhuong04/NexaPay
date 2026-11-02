@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-01  
 **Updated:** 2026-11-02  
-**Status:** Accepted design baseline; root/scoped Docs instructions và 4 project skills đã tạo. Implementation nghiệp vụ ứng dụng chưa bắt đầu.
+**Status:** Accepted design baseline; P0-01 identity/wallet đã implement và verify local (24 backend, 8 frontend, 4 E2E). Hosted CI được theo dõi sau push; toàn bộ P0 chưa Done.
 
 ## Đọc theo thứ tự
 
@@ -27,9 +27,9 @@ Tên ba file vẫn có `_v0.1` để giữ link/open tabs; nội dung hiện t�
 
 ## Công việc tiếp theo
 
-1. Scaffold frontend/backend/Compose và pin compatible stable dependency versions.
-2. Viết DDL/Flyway + OpenAPI + fixtures/tests cho P0 slice account/wallet/funding/transfer/recovery/history theo Money Spec; không dựng toàn bộ P1 schema trước.
-3. Làm wireframes/prototype P0 mobile/desktop rồi nối API theo slice; triển khai CLI reconciliation, audit và CI cùng P0.
+1. P0-01 đã có frontend/backend/Compose, pinned tooling, DDL/Flyway/OpenAPI và tests identity/wallet. Xem [README chạy ứng dụng](../README.md).
+2. Tiếp tục P0-02 funding: MoneyPostingService, journal guards, issuance/quota và command idempotency theo Money Spec.
+3. Tiếp tục transfer/history/recovery và reconciliation CLI theo slice; mở rộng audit/UI/tests tương ứng.
 4. Nghiệm thu MM-01–08 và P0 DoD trước P1a. Host/public demo chỉ chọn khi biết ngân sách; không tự cam kết chi phí hoặc ngày release.
 
 Thông tin kế hoạch chưa có: số giờ/tuần, hạn portfolio, ngân sách hosting. Các thông tin này không cản P0 local. Không có benchmark/test/deployment claim trong baseline khi chưa có evidence thực tế.
@@ -38,11 +38,17 @@ Thông tin kế hoạch chưa có: số giờ/tuần, hạn portfolio, ngân sá
 
 | Slice | Plan | Trạng thái |
 |---|---|---|
-| P0-01 Identity & Wallet | [Phạm vi, schema/API candidates, work packages và acceptance](<../Implementation Plan/P0-01-identity-wallet.md>) | PLAN_READY ngày 02/11/2026; implementation NOT_STARTED; funding/P2P/history là các slice tiếp theo |
+| P0-01 Identity & Wallet | [Phạm vi, implementation và acceptance evidence](<../Implementation Plan/P0-01-identity-wallet.md>) | LOCAL_VERIFIED ngày 02/11/2026; hosted CI theo dõi sau push; funding/P2P/history là các slice tiếp theo |
+
+## Artifacts implementation
+
+- [OpenAPI P0-01](api/p0-01.openapi.yaml): 8 operations / 7 paths, session/CSRF, typed errors và money strings.
+- [Wireframes/state flow](ui/P0-01-wireframes.md): screens/states trong slice.
+- [Setup và verification](../README.md): commands thật và giới hạn runtime.
 
 ## Làm việc với agent
 
-Hướng dẫn dùng trực tiếp: [root AGENTS.md](../AGENTS.md) và [Docs/AGENTS.md](AGENTS.md). Bắt đầu phiên agent tại workspace root; scoped backend/frontend/infra instructions sẽ được thêm cùng scaffold và build commands thật.
+Hướng dẫn dùng trực tiếp: [root AGENTS.md](../AGENTS.md) và [Docs/AGENTS.md](AGENTS.md). Bắt đầu phiên agent tại workspace root; scoped [backend](../backend/AGENTS.md), [frontend](../frontend/AGENTS.md), [infra](../infra/AGENTS.md) đã có build commands thật.
 
 | Project skill | Workflow |
 |---|---|
@@ -53,4 +59,4 @@ Hướng dẫn dùng trực tiếp: [root AGENTS.md](../AGENTS.md) và [Docs/AGE
 
 Ví dụ gọi rõ skill trong task: `Dùng $nexapay-money-change để review idempotency theo FR-T04/US-06, chỉ báo findings.` Hoặc `Dùng $nexapay-vertical-slice để lập kế hoạch P0 identity/wallet; chưa viết code.` Skill cũng để chế độ tự chọn mặc định theo description; không buộc nạp cả bốn cho mọi task.
 
-**Kiểm chứng ngày 02/11/2026:** Bốn SKILL.md đã pass skill-creator quick validator. Skill vertical-slice đã được gọi cho task lập kế hoạch P0-01; plan ở bảng trên là artifact bàn giao. Điều này chưa chứng minh chất lượng mọi workflow hoặc auto-selection của host; application checks vẫn chưa chạy. Ví dụ money review phía trên chưa được thực hiện.
+**Kiểm chứng ngày 02/11/2026:** Bốn SKILL.md đã pass skill-creator quick validator. Skill vertical-slice đã được gọi cho task lập kế hoạch P0-01; plan ở bảng trên là artifact bàn giao. Điều này chưa chứng minh chất lượng mọi workflow hoặc auto-selection của host; application checks P0-01 đã chạy theo evidence trong plan; không suy ra toàn bộ P0 hoặc các workflow khác đã đạt. Ví dụ money review phía trên chưa được thực hiện.

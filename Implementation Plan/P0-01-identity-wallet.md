@@ -1,9 +1,9 @@
 # P0-01 — Identity & Wallet foundation
 
 **Ngày:** 02/11/2026  
-**Trạng thái kế hoạch:** PLAN_READY — đã đối chiếu baseline, có thể dùng để bắt đầu implementation  
-**Trạng thái phần mềm:** NOT_STARTED — chưa có scaffold/code/migrations/OpenAPI/tests ứng dụng  
-**Chế độ task hiện tại:** Planning only, theo `$nexapay-vertical-slice`.
+**Trạng thái kế hoạch:** IMPLEMENTED — các work packages đã bàn giao; chờ hosted CI sau push
+**Trạng thái phần mềm:** LOCAL_VERIFIED — 24 backend tests, 8 frontend tests, 4 E2E passed; P0 chưa Done
+**Chế độ task hiện tại:** Implementation; commit các mốc quan trọng và push lần đầu khi hoàn tất.
 
 ## 1. Kết quả cần đạt
 
@@ -21,7 +21,9 @@ Một người dùng dùng dữ liệu giả có thể mở landing, đăng ký,
 - [Money Movement v0.2](../Docs/NexaPay_MONEY_MOVEMENT_SPEC_v0.2.md), account initialization, balance projection và lock policy.
 - [UI/UX v0.2](../Docs/NexaPay_UIUX_DESIGN_SPEC_v0.1.md), UI-01/02/03/08, auth routing, data states và accessibility.
 
-## 2. Evidence hiện tại và dependencies
+## 2. Khảo sát ban đầu và dependencies
+
+Bảng này lưu evidence **trước scaffold** của task lập kế hoạch. Trạng thái implementation hiện tại và kết quả thực thi nằm ở mục 10–14; các nhận xét “chưa có” dưới đây là lịch sử.
 
 | Thành phần | Quan sát ngày 02/11/2026 | Hệ quả |
 |---|---|---|
@@ -76,7 +78,7 @@ Flow chọn cho kế hoạch: register commit → sign-in → overview sau login
 
 ## 5. Data model và migrations cần tạo
 
-Đây là bảng thiết kế tối thiểu; tên/DDL cụ thể được hoàn thiện trước persistence code. Không tạo toàn bộ P1 schema hoặc journal tables rỗng chỉ để chuẩn bị xa.
+Thiết kế tối thiểu đã được hiện thực trong [V1__identity_wallet.sql](../backend/src/main/resources/db/migration/V1__identity_wallet.sql). Không tạo toàn bộ P1 schema hoặc journal tables rỗng chỉ để chuẩn bị xa.
 
 | Entity/table dự kiến | Dữ liệu chính | Invariant / ownership |
 |---|---|---|
@@ -96,7 +98,7 @@ Flow chọn cho kế hoạch: register commit → sign-in → overview sau login
 
 ## 6. API contract cần hoàn thiện trước implementation
 
-Các paths dưới đây là **contract candidates của kế hoạch**, không phải endpoint đang tồn tại hoặc thay đổi baseline đã được triển khai. Finalize request/response/error examples trong OpenAPI trước controllers; route naming không cần mở lại quyết định session/CSRF.
+Các paths dưới đây đã được hiện thực theo [OpenAPI P0-01](../Docs/api/p0-01.openapi.yaml), được chốt trước controllers. OpenAPI là contract chi tiết; bảng giữ traceability của kế hoạch.
 
 | Method/path dự kiến | Request/quyền | Success | Negative cases cần mô tả |
 |---|---|---|---|
@@ -126,7 +128,7 @@ Không tạo API đọc wallet bất kỳ chỉ để có ownership test: `/me` 
 
 ## 8. UI và trạng thái cần bàn giao
 
-Các deliverables dưới đây chưa được thiết kế hoặc code; tạo P0 wireframes/prototype cho đúng phạm vi rồi nối API thật.
+Các deliverables dưới đây đã có [wireframes/state flow](../Docs/ui/P0-01-wireframes.md) và React/Fluent UI nối API thật. Kết quả nghiệm thu ghi ở mục 10–14.
 
 | Screen/area | Behavior cần có |
 |---|---|
@@ -145,7 +147,7 @@ Các deliverables dưới đây chưa được thiết kế hoặc code; tạo P
 
 ## 9. Work packages và thứ tự
 
-Checkbox là công việc implementation **chưa thực hiện**, không là trạng thái kế hoạch.
+Checkbox theo dõi công việc implementation; evidence thực tế ở mục 10–14.
 
 | ID | Công việc | Dependency | Artifact / exit |
 |---|---|---|---|
@@ -158,69 +160,78 @@ Checkbox là công việc implementation **chưa thực hiện**, không là tr�
 | IW-06 | Local packaging + CI + connected acceptance | IW-02–05 | Vite API proxy; bundle SPA+API same-origin, smoke và reports |
 | IW-07 | Handoff/update docs và slice DoD | IW-06 | Test evidence, limitations và dependencies cho funding |
 
-- [ ] IW-00 hoàn thành.
-- [ ] IW-01 hoàn thành.
-- [ ] IW-02 hoàn thành.
-- [ ] IW-03 hoàn thành.
-- [ ] IW-04 hoàn thành.
-- [ ] IW-05 hoàn thành.
-- [ ] IW-06 hoàn thành.
-- [ ] IW-07 hoàn thành.
+- [x] IW-00 hoàn thành (evidence mục 10–14).
+- [x] IW-01 hoàn thành (evidence mục 10–14).
+- [x] IW-02 hoàn thành (evidence mục 10–14).
+- [x] IW-03 hoàn thành (evidence mục 10–14).
+- [x] IW-04 hoàn thành (evidence mục 10–14).
+- [x] IW-05 hoàn thành (evidence mục 10–14).
+- [x] IW-06 hoàn thành (evidence mục 10–14).
+- [x] IW-07 hoàn thành (evidence mục 10–14).
 
 Khi IW-00 lựa chọn Maven/Gradle và package manager, ưu tiên wrapper/lockfile và commands thống nhất local/CI. Plan không giả định command nào đã tồn tại, không tự khóa patch version chưa kiểm chứng support/compatibility. Chỉ scaffold module/layers thực sự dùng.
 
 ## 10. Acceptance và verification matrix
 
-Tất cả checks dưới đây **NOT RUN — chưa có ứng dụng/tests**. Tên là tiêu chí cho test implementation, không phải test files đã tạo.
+Các checks local dưới đây đã **PASSED ngày 02/11/2026**; hosted GitHub Actions được theo dõi riêng sau lần push đầu. Không có test bị skip.
 
 | ID | Kịch bản cần chứng minh | Evidence | Requirement |
 |---|---|---|---|
-| IW-T01 | Signup hợp lệ → đúng một user/profile/role/wallet/account ACTIVE, balance 0; signup audit | PostgreSQL integration + API | FR-A01, FR-W01, FR-AU01, US-01 |
-| IW-T02 | Concurrent signup cùng normalized email → một account graph; không orphan, duplicate wallet hoặc double signup audit | PostgreSQL concurrent requests | FR-A01, FR-W01, US-01 |
-| IW-T03 | Fault sau tạo user/account hoặc trước commit → không partial rows/audit; restart không phá quan hệ đã commit | Transaction failure injection/test runtime | FR-W01, FR-AU01, NFR-04 |
-| IW-T04 | Invalid password Unicode/byte limits/email và mass-assignment role/owner/balance bị reject; hash không plaintext/không trả ra API | Unit + API + DB assertions | FR-A01/04, NFR-01/10 |
-| IW-T05 | Login sai không leak credentials; valid login đổi session ID, request sau được auth; throttle/reset window đúng | Security integration với clock control | FR-A02/04, NFR-01 |
-| IW-T06 | Unsafe methods thiếu/sai CSRF bị chặn; refresh token sau auth transition; cookie flags theo local/demo | API + browser cookie/session assertions | FR-A02/04 |
-| IW-T07 | Logout/idle/absolute expiry/restart → session cũ mất quyền; persisted user/wallet vẫn còn | Security/runtime integration | FR-A02, NFR-01 |
-| IW-T08 | A/B tách session: mỗi người chỉ thấy/sửa mình; locked wallet đọc được status/balance; profile chỉ đổi displayName và audit atomic | Authz/API integration | FR-A03/04, FR-W02/03, BR-20 |
-| IW-T09 | Dashboard loading/error không giả 0; logout/switch và response cũ không lộ dữ liệu A sang B | Component tests + controlled API timing | FR-W02, NFR-09/10 |
-| IW-T10 | Signup→sign-in→overview 0→profile update→refresh→logout→protected route denial | Playwright E2E | US-01, phần overview US-02 |
-| IW-T11 | Keyboard/focus/labels/errors, mobile/desktop, zoom/reflow/contrast và same-origin deep links/API 404 | Browser/manual + axe + packaging smoke | NFR-08/09 |
-| IW-T12 | Flyway clean setup, app runtime permissions, module dependency checks và CI build/frontend typecheck/lint/test | Build/Testcontainers/ArchUnit/CI logs | NFR-07/08 |
+| IW-T01 | Signup hợp lệ → đúng một user/profile/role/wallet/account ACTIVE, balance 0; signup audit | PASSED — IdentityWalletIntegrationTest: atomic signup, DB graph/hash/zero/audit | FR-A01, FR-W01, FR-AU01, US-01 |
+| IW-T02 | Concurrent signup cùng normalized email → một account graph; không orphan, duplicate wallet hoặc double signup audit | PASSED — 4 concurrent signup requests, 1 success + 3 conflicts, no orphan | FR-A01, FR-W01, US-01 |
+| IW-T03 | Fault sau tạo user/account hoặc trước commit → không partial rows/audit; restart không phá quan hệ đã commit | PASSED — fault after audit rolls back all rows; runtime-smoke restart preserves wallet | FR-W01, FR-AU01, NFR-04 |
+| IW-T04 | Invalid password Unicode/byte limits/email và mass-assignment role/owner/balance bị reject; hash không plaintext/không trả ra API | PASSED — IdentityPolicyTest + API mass-assignment/DB assertions; 16 KiB known/chunked bounds | FR-A01/04, NFR-01/10 |
+| IW-T05 | Login sai không leak credentials; valid login đổi session ID, request sau được auth; throttle/reset window đúng | PASSED — session fixation/context, generic credentials; LoginThrottleTest clock/concurrent permits | FR-A02/04, NFR-01 |
+| IW-T06 | Unsafe methods thiếu/sai CSRF bị chặn; refresh token sau auth transition; cookie flags theo local/demo | PASSED — API CSRF regressions, real browser cookie checks; runtime default Secure/HttpOnly/Lax | FR-A02/04 |
+| IW-T07 | Logout/idle/absolute expiry/restart → session cũ mất quyền; persisted user/wallet vẫn còn | PASSED — clock idle/absolute/logout tests; packaged-runtime restart + re-login | FR-A02, NFR-01 |
+| IW-T08 | A/B tách session: mỗi người chỉ thấy/sửa mình; locked wallet đọc được status/balance; profile chỉ đổi displayName và audit atomic | PASSED — A/B profile/wallet isolation, LOCKED read and audited rename rollback | FR-A03/04, FR-W02/03, BR-20 |
+| IW-T09 | Dashboard loading/error không giả 0; logout/switch và response cũ không lộ dữ liệu A sang B | PASSED — component/cache tests + E2E delayed response, 503, retry, expired mutation recovery | FR-W02, NFR-09/10 |
+| IW-T10 | Signup→sign-in→overview 0→profile update→refresh→logout→protected route denial | PASSED — 4 Playwright cases across desktop/mobile on real Docker app/DB | US-01, phần overview US-02 |
+| IW-T11 | Keyboard/focus/labels/errors, mobile/desktop, zoom/reflow/contrast và same-origin deep links/API 404 | PASSED — axe signup/wallet/profile, keyboard toggle, 320px reflow, screenshots; packaged deep link/API JSON 404 | NFR-08/09 |
+| IW-T12 | Flyway clean setup, app runtime permissions, module dependency checks và CI build/frontend typecheck/lint/test | PASSED local — Flyway/PostgreSQL role guards, ArchUnit, typecheck/lint/build; hosted CI pending first push | NFR-07/08 |
 
 Bootstrap 0 chưa cần posted entries. MM-01–08 của P0 **chưa được nghiệm thu** bằng slice này: không dùng việc mọi balance đều 0 để claim MM-08 đối soát hoàn chỉnh hoặc MM-05 journal guards đã đạt. Các checks đó bắt buộc trước P0 Done và được triển khai khi có ledger posting/funding/transfer.
 
 ## 11. Commands, evidence và hạn chế
 
-| Loại | Working directory / cách xác định | Trạng thái hiện tại |
+| Check / working directory | Command và kết quả | Report / evidence |
 |---|---|---|
-| Backend compile/format/unit/integration | backend/; lấy command từ wrapper/build manifest được tạo IW-00 | Chưa có command ứng dụng |
-| Frontend lint/typecheck/component/build | frontend/; lấy package scripts và lockfile thực tế IW-00 | Chưa có command ứng dụng |
-| PostgreSQL integration | Testcontainers + runtime test config của backend | Chưa chạy; toolchain chưa khảo sát |
-| E2E/browser/accessibility | Playwright/axe config của frontend và local test runtime | Chưa có config/check results |
-| Compose/package smoke | infra/ hoặc root theo Compose files được tạo | Chưa có Compose/Docker artifacts |
-| Plan validation | Workspace root; Python read-only kiểm link/case/table/fences/requirement references của plan và index | PASSED ngày 02/11/2026: 2 documents, 23 local links, 8 IW packages và 12 test groups; không lỗi |
+| Backend — backend/ | `./mvnw.cmd -B -ntp -Pweb spotless:apply verify`: PASSED, 24 tests, 0 failed/errors/skipped | `backend/target/surefire-reports/`, `.tools/final-backend-verify.log` |
+| Frontend — frontend/ | `npm run format:check`, `npm run lint`, `npm run test`, `npm run build`: PASSED, 8 tests; strict typecheck trong build | 3 test files dưới src/; production dist; `.tools/` logs |
+| Dependency audit — frontend/ | `npm audit --audit-level=moderate`: PASSED, 0 vulnerabilities | package-lock.json; patched minimatch override 11.0.1 |
+| Connected browser — frontend/ | `E2E_BASE_URL=http://127.0.0.1:18082 npm run test:e2e`: PASSED, 4/4, 29.0s | `frontend/playwright-report/`, `frontend/test-results/`, `.tools/final-e2e.log`; PowerShell đặt biến qua `$env:E2E_BASE_URL` |
+| Compose — root | `docker compose --env-file .env -f infra/compose.yaml config --quiet`; `--profile app build app`; `--profile app up -d app`: PASSED | Image `infra-app`, real PostgreSQL 17.7 và non-root app container |
+| Packaged runtime — root | `node infra/runtime-smoke.mjs`: PASSED | `.tools/runtime-smoke.log`; restart/session/persistence, SPA/API routing, default secure cookie |
+| Hosted CI | [.github/workflows/ci.yml](../.github/workflows/ci.yml) chạy cùng gates + E2E | NOT RUN trước first push; theo dõi kết quả GitHub Actions sau push |
+| Documentation | Local links/case/fences/JSON/YAML/OpenAPI refs + requirement IDs | PASSED — 16 documents, 92 local links/case, fences, JSON/YAML, 36 OpenAPI refs và 8 schema examples; 8 operations trên 7 paths |
 
-Khi implement, điền command thật + môi trường + exit/result + report path vào plan, không thay “NOT RUN” bằng PASS nếu test bị skip/missing tool. Không thêm lệnh Maven/npm dự đoán vào README như thể đã runnable.
+Reports/generated artifacts được gitignore; tests/config và lệnh tái lập được commit. Không coi image build `-DskipTests` là test pass: backend đã chạy đầy đủ `verify` bên ngoài Docker; các lần package sau chỉ bundle UI mới. Các fake-account fixtures do E2E/runtime smoke tạo không chứa dữ liệu thật, không reset volume.
 
 ## 12. Slice Definition of Done và handoff
 
-- [ ] Connected flow ở mục 1 chạy trên local same-origin stack, không mock runtime data hoặc auth bypass.
-- [ ] IW-T01–12 có evidence phù hợp và không còn acceptance bắt buộc bị fail/not-run.
-- [ ] Schema/OpenAPI/code/UI/tests nhất quán; commands tái lập trong README/scoped AGENTS/CI.
-- [ ] Không duplicate wallet/projection, không seed nonzero, credentials an toàn, audit signup/profile đúng transaction.
-- [ ] Partial FR-W02/W03/FR-AU01 và P0 gates còn thiếu được ghi rõ; không tuyên bố P0 Done.
+- [x] Connected flow ở mục 1 chạy trên local same-origin stack, không mock runtime data hoặc auth bypass.
+- [x] IW-T01–12 có evidence local phù hợp; hosted CI được tách trạng thái để không nhầm với local pass.
+- [x] Schema/OpenAPI/code/UI/tests nhất quán; commands tái lập trong README/scoped AGENTS/CI.
+- [x] Không duplicate wallet/projection, không seed nonzero, credentials an toàn, audit signup/profile đúng transaction.
+- [x] Partial FR-W02/W03/FR-AU01 và P0 gates còn thiếu được ghi rõ; không tuyên bố P0 Done.
 
 **Handoff sau slice:** personal ownership và ledger account 0; session/CSRF principal; typed own-wallet/profile APIs; audit capability; migrations/runtime permissions; CI/test setup; Fluent shell/query context. P0-02 funding tiếp tục xây MoneyPostingService, journal/guards, issuance/quota và command idempotency trước bất kỳ credit tiền nào. Transfer/history/recovery và reconciliation CLI tiếp tục các slice sau.
 
-## 13. Kết quả của task lập kế hoạch
+## 13. Lịch sử: kết quả task lập kế hoạch trước implementation
 
 - Đã đọc full baseline và kiểm kê workspace; không có plan cũ cần hợp nhất trong Implementation Plan.
 - Đã lập phạm vi/traceability, transaction/schema/API candidates, UI/security acceptance, IW work packages và test matrix.
 - Đã chạy structural/reference validation của plan và index bằng Python: exit code 0; 23 link nội bộ hợp lệ, requirement references có trong PRD, không có checkbox implementation bị đánh dấu hoàn thành.
 - Không tạo mã nguồn, migrations/OpenAPI thực thi, dependency pin hoặc kết quả test ứng dụng. PLAN_READY chỉ là kế hoạch sẵn dùng, không phải implementation Done.
 
+
 ## 14. Implementation log
 
-- IW-00/01: JDK 21.0.12.1, Node 22.18.0, npm 10.9.3, Docker 29.1.3/Compose 2.40.3 s?n s?ng. Ch?n Spring Boot 3.5.16 v? Maven Wrapper 3.9.16; registry x?c nh?n stable artifacts. Git main/origin ???c c?u h?nh theo y?u c?u; remote ban ??u r?ng.
-- ?? t?o scaffold, scoped AGENTS, migration V1 v? OpenAPI contract. Backend/UI acceptance ch?a nghi?m thu.
+- Toolchain: Java 21.0.12.1, Node 22.18.0, npm 10.9.3, Docker 29.1.3/Compose 2.40.3; Spring Boot 3.5.16 và Maven Wrapper 3.9.16. Wrapper/scripts/lockfile đã pin; không cài tool toàn hệ thống.
+- Database local 5442 vì cổng 5432 đang bận. Acceptance dùng JAR 18080 và Docker 18082 vì cổng 8080 có tiến trình khác; không dừng hoặc thay đổi service đó. Mặc định repo vẫn 8080, đổi APP_PORT/E2E_BASE_URL khi cần.
+- Signup không auto-login; no initial journal/nonzero seed. Runtime DB cấm INSERT/UPDATE balance và sửa/xoá audit; signup/profile audit cùng transaction. Body 16 KiB áp dụng cả chunked; CSRF token/credentials có redacted toString.
+- Các lỗi phát hiện và sửa qua E2E: label selector phải bỏ required marker của Fluent; contrast sidebar/footer; controlled profile field để giữ giá trị sau refresh; explicit auth navigation khi mutation trả 401. Không nới lỏng axe/security assertions để pass.
+- Visual QA đã xem landing desktop, wallet mobile và profile desktop; E2E kiểm tra không overflow ở 320px, screenshot desktop/mobile, axe trên signup/wallet/profile và keyboard focus password toggle.
+- Commit milestones: `2641075` scaffold/contracts; `b9ac9ac` atomic provisioning/security; `76e59bb` Fluent UI; `7791711` API bounds; `75f7f72` browser regression fixes; `a2d7d3c` packaging/runtime smoke/CI.
+- First push target được chủ dự án yêu cầu: `https://github.com/anhkhuong04/NexaPay.git`, branch `main`. Hosted CI chưa có kết quả trước push; không claim đã green.
+- Hạn chế đã chốt: một instance, session/throttle memory; public deployment/HTTPS termination chưa triển khai. Funding/P2P/history/reconciliation và MM-01–08 còn ở slice sau. Chưa có benchmark tải hay nghiệm thu toàn bộ WCAG bằng assistive technology; axe/keyboard/reflow là evidence trong phạm vi P0-01.
