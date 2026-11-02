@@ -1,0 +1,453 @@
+openapi: 3.1.0
+info:
+  title: NexaPay P0-01 Identity & Wallet
+  version: 0.1.0
+  description: Simulation only. Same-origin HTTP session + CSRF. JSON money is integer
+    strings. Correlation ID in safe error envelope. Secure cookies except explicit
+    local profile. All API responses are no-store.
+servers:
+- url: /api/v1
+paths:
+  /auth/csrf:
+    get:
+      operationId: get_auth_csrf
+      security: []
+      responses:
+        '200':
+          description: '200'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Csrf'
+        '500':
+          description: Safe technical failure; no internal exception details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /auth/register:
+    post:
+      operationId: post_auth_register
+      security: []
+      responses:
+        '201':
+          description: '201'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Created'
+        '400':
+          description: '400'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: '403'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: '409'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Safe technical failure; no internal exception details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+        description: Token from GET /auth/csrf, refreshed after login/logout.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Register'
+      description: Creates the user/profile/role/zero wallet/account/audit atomically.
+        Does not authenticate. Duplicate normalized email returns 409; no money idempotency
+        key.
+  /auth/login:
+    post:
+      operationId: post_auth_login
+      security: []
+      responses:
+        '200':
+          description: '200'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '400':
+          description: '400'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: '401'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: '403'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: '429'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds until another attempt may be admitted
+        '500':
+          description: Safe technical failure; no internal exception details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+        description: Token from GET /auth/csrf, refreshed after login/logout.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+  /auth/logout:
+    post:
+      operationId: post_auth_logout
+      security: []
+      responses:
+        '204':
+          description: '204'
+        '403':
+          description: '403'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Safe technical failure; no internal exception details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+        description: Token from GET /auth/csrf, refreshed after login/logout.
+      description: 204 with valid CSRF, including an anonymous repeat after fresh
+        CSRF bootstrap. Reusing a pre-logout token returns 403. Invalidates session
+        and expires JSESSIONID.
+  /auth/session:
+    get:
+      operationId: get_auth_session
+      security:
+      - sessionCookie: []
+      responses:
+        '200':
+          description: '200'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '401':
+          description: '401'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Safe technical failure; no internal exception details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      description: Idle lifetime 30 minutes, absolute lifetime 8 hours; one in-memory-session
+        server instance. Refresh does not extend absolute lifetime.
+  /me:
+    get:
+      operationId: get_me
+      security:
+      - sessionCookie: []
+      responses:
+        '200':
+          description: '200'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '401':
+          description: '401'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Safe technical failure; no internal exception details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    patch:
+      operationId: patch_me
+      security:
+      - sessionCookie: []
+      responses:
+        '200':
+          description: '200'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '400':
+          description: '400'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: '401'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: '403'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Safe technical failure; no internal exception details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+        description: Token from GET /auth/csrf, refreshed after login/logout.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfilePatch'
+  /wallets/me:
+    get:
+      operationId: get_wallets_me
+      security:
+      - sessionCookie: []
+      responses:
+        '200':
+          description: '200'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wallet'
+        '401':
+          description: '401'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Safe technical failure; no internal exception details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
+  schemas:
+    Error:
+      type: object
+      required:
+      - code
+      - message
+      - correlationId
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        correlationId:
+          type: string
+          format: uuid
+        fieldErrors:
+          type: object
+          additionalProperties:
+            type: string
+    Csrf:
+      type: object
+      required:
+      - token
+      - headerName
+      properties:
+        token:
+          type: string
+        headerName:
+          type: string
+          const: X-CSRF-TOKEN
+    Login:
+      type: object
+      additionalProperties: false
+      required:
+      - email
+      - password
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          maxLength: 128
+    Register:
+      type: object
+      additionalProperties: false
+      required:
+      - email
+      - password
+      - displayName
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          minLength: 12
+          maxLength: 64
+          writeOnly: true
+          description: Also <=72 UTF-8 bytes; Unicode code points, no truncation.
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 80
+    ProfilePatch:
+      type: object
+      additionalProperties: false
+      required:
+      - displayName
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 80
+    Profile:
+      type: object
+      required:
+      - id
+      - email
+      - displayName
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+    Created:
+      type: object
+      required:
+      - userId
+      - walletId
+      properties:
+        userId:
+          type: string
+          format: uuid
+        walletId:
+          type: string
+          format: uuid
+    Session:
+      type: object
+      required:
+      - userId
+      - roles
+      - authenticatedAt
+      - absoluteExpiresAt
+      properties:
+        userId:
+          type: string
+          format: uuid
+        roles:
+          type: array
+          items:
+            type: string
+            enum:
+            - INDIVIDUAL
+            - MERCHANT
+            - ADMIN
+        authenticatedAt:
+          type: string
+          format: date-time
+        absoluteExpiresAt:
+          type: string
+          format: date-time
+    Wallet:
+      type: object
+      required:
+      - id
+      - currency
+      - status
+      - availableBalance
+      - heldBalance
+      - totalBalance
+      properties:
+        id:
+          type: string
+          format: uuid
+        currency:
+          type: string
+          const: VND
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - LOCKED
+        availableBalance:
+          type: string
+          pattern: ^(0|[1-9][0-9]*)$
+        heldBalance:
+          type: string
+          pattern: ^(0|[1-9][0-9]*)$
+        totalBalance:
+          type: string
+          pattern: ^(0|[1-9][0-9]*)$

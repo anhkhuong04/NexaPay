@@ -1,0 +1,14 @@
+.tools/
+**/node_modules/
+**/target/
+frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
+frontend/coverage/
+.env
+.env.*
+!.env.example
+*.log
+.idea/
+.vscode/
+.DS_Store

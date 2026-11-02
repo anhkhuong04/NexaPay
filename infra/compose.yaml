@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:17.7-alpine
+    environment:
+      POSTGRES_DB: nexapay
+      POSTGRES_USER: nexapay_owner
+      POSTGRES_PASSWORD: ${DB_OWNER_PASSWORD:?Set DB_OWNER_PASSWORD in .env}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:?Set DB_APP_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/10-app-role.sh:ro
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U nexapay_owner -d nexapay]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    ports:
+      - 127.0.0.1:${DB_PORT:-5442}:5432
+  app:
+    profiles: [app]
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/nexapay
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:?Set DB_APP_PASSWORD}
+      DB_OWNER_PASSWORD: ${DB_OWNER_PASSWORD:?Set DB_OWNER_PASSWORD}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
+    ports:
+      - 127.0.0.1:${APP_PORT:-8080}:8080
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  pgdata:
