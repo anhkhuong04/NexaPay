@@ -7,7 +7,10 @@ P0-01 triển khai đăng ký và tạo ví 0 VND atomic, đăng nhập/session/
 sửa tên hiển thị và đăng xuất. P0-02 bổ sung funding 100.000 VND có quota,
 ledger/idempotency atomic, tra cứu kết quả và reconciliation CLI. P0-03 bổ sung
 chuyển tiền P2P và lịch sử/chi tiết có phân quyền; evidence nghiệm thu trong
-[plan P0-03](<Implementation Plan/P0-03-p2p-history.md>).
+[plan P0-03](<Implementation Plan/P0-03-p2p-history.md>). P0-04 bổ sung 5 giao dịch
+mới nhất trên Tổng quan, quick actions theo trạng thái ví và
+[ma trận nghiệm thu P0](<Implementation Plan/P0-04-overview-release-readiness.md>).
+Local gates: 50 backend, 26 frontend unit, 22 desktop/mobile E2E; hosted CI đang xác minh.
 
 ## Chạy local
 
@@ -143,7 +146,7 @@ Không xoá volume hay sửa balance để làm report xanh.
 - [Plan, acceptance và kết quả P0-01](<Implementation Plan/P0-01-identity-wallet.md>)
 - [Plan và evidence P0-02](<Implementation Plan/P0-02-demo-funding.md>)
 - [Plan và evidence P0-03](<Implementation Plan/P0-03-p2p-history.md>)
-- [Đề xuất P0-04 và roadmap P1a](<Implementation Plan/P0-04-overview-release-readiness.md>)
+- [Overview, nghiệm thu P0-04 và roadmap P1a](<Implementation Plan/P0-04-overview-release-readiness.md>)
 - [OpenAPI](Docs/api/p0-01.openapi.yaml)
 - [OpenAPI funding/commands](Docs/api/p0-02.openapi.yaml)
 - [Wireframes và trạng thái UI](Docs/ui/P0-01-wireframes.md)

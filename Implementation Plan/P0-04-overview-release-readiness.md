@@ -1,7 +1,7 @@
 # P0-04 — Overview và nghiệm thu Wallet MVP
 
 **Ngày:** 02/11/2026  
-**Trạng thái:** IN PROGRESS — user yêu cầu thực thi ngày 02/11/2026.
+**Trạng thái:** LOCAL VERIFIED — 50 backend / 26 frontend unit / 22 E2E; chờ hosted CI trước khi đóng P0 DoD.
 
 **Goal:** Hoàn thiện các yêu cầu Overview còn thiếu, đối chiếu P0 DoD và tạo
 điểm bàn giao rõ ràng trước P1a.
@@ -84,7 +84,7 @@ Backend `GET /api/v1/transactions` đã nhận limit 1..100 và sort createdAt/i
   biến động đã post. Giữ record order từ API.
 - [x] Refresh Overview cập nhật cả wallet và recent activity; lỗi history không
   thay balance thành 0 hoặc che một balance fetch đã thành công, và ngược lại.
-- [ ] GREEN: frontend unit/lint/build và connected journey funding→P2P→Overview
+- [x] GREEN: frontend unit/lint/build và connected journey funding→P2P→Overview
   cho cả sender/recipient. Kiểm actor switch và terminal response về sau navigation.
   Expected: recent list và balance phản ánh authoritative results đúng actor.
 - [x] Commit: `feat: add owned recent activity to wallet overview`.
@@ -99,7 +99,7 @@ Backend `GET /api/v1/transactions` đã nhận limit 1..100 và sort createdAt/i
   active hiện tại không đạt assertion mới.
 - [x] Implement trạng thái controls theo wallet data server; khi chưa biết status
   không render intent mới như đã sẵn sàng. Không dùng CSS-only disable anchor.
-- [ ] GREEN: keyboard, focus, labels/axe, mobile 390px và reflow 320px; recent list
+- [x] GREEN: keyboard, focus, labels/axe, mobile 390px và reflow 320px; recent list
   không overflow UUID/text dài. Test LOCKED UI dùng fixture có nhãn trong component
   hoặc controlled GET response; không mở API lock/admin hay sửa tiền runtime.
   Expected: controls chặn intent mới, mọi luồng tra cứu vẫn hoạt động.
@@ -107,13 +107,13 @@ Backend `GET /api/v1/transactions` đã nhận limit 1..100 và sort createdAt/i
 
 ### Task 3 — P0 release evidence và bàn giao P1a
 
-- [ ] Lập bảng 10 điều P0 DoD của PRD: mỗi điều có test/report/behavior tương ứng,
+- [x] Lập bảng 10 điều P0 DoD của PRD: mỗi điều có test/report/behavior tương ứng,
   phân biệt requirement đã đạt với limitation được baseline chấp nhận.
-- [ ] Frontend/: `npm run format:check`, `npm run lint`, `npm run test`,
+- [x] Frontend/: `npm run format:check`, `npm run lint`, `npm run test`,
   `npm run build`; expected all pass, số test mới được ghi từ output thực.
-- [ ] Backend/: `./mvnw.cmd -B -ntp -Pweb verify` (Linux `./mvnw`), Docker
+- [x] Backend/: `./mvnw.cmd -B -ntp -Pweb verify` (Linux `./mvnw`), Docker
   PostgreSQL Testcontainers; expected full regression xanh, không skip MM gates.
-- [ ] Đóng gói Compose bản mới không reset volume; chạy `npm run test:e2e` against
+- [x] Đóng gói Compose bản mới không reset volume; chạy `npm run test:e2e` against
   runtime, `node infra/runtime-smoke.mjs` và `infra/reconcile.sql` theo README.
   Expected connected journey pass, findings=0; không claim public deployment.
 - [ ] Review các thay đổi thực tế, sửa findings quan trọng; cập nhật Docs/README,
@@ -181,3 +181,78 @@ không phải prerequisite của kế hoạch này.
   8 files, lint + strict build pass (`.tools/p004/unit-final.log`, `lint-final.log`,
   `build-final.log`). Actions dùng native disabled Fluent buttons, history/recovery
   links vẫn mở. E2E mới gồm 3 journeys × desktop/mobile; runtime checks tiếp theo.
+
+- Release regression: backend full `-Pweb verify` **50/50**, 0 failures/errors/skips,
+  1m48s, Spotless pass (`.tools/p004/backend.log`). Packaged runtime smoke PASS:
+  SPA/API routing, restart/session invalidation, persisted P2P lookup/replay/history
+  và default Secure/HttpOnly/Lax cookie (`.tools/p004/runtime-final.log`).
+- Whole-change read-only review trên `00f7ce7..459814d`: **0 critical / 0 important /
+  0 minor actionable**, không có declined-to-judge items. Runtime/visual gates do
+  implementer xác minh riêng; review không thay thế test evidence.
+- E2E harness: sau UI funding, phải bấm “Bắt đầu chuyển mới” trước form P2P vì
+  terminal reference được giữ để recovery. Focused Overview **6/6** pass sau sửa;
+  không thay product recovery để né test (`.tools/p004/e2e-overview.log`).
+- First full E2E **21/22**: mobile axe chụp màu ở giữa Fluent disabled→enabled
+  transition. Probe thật xác nhận transition color/background 100ms, intermediate
+  gray rồi settled white/dark tokens (`.tools/p004/transitions.log`). Harness chờ
+  controls enabled và finite browser animations kết thúc trước scan; không tắt
+  axe rule, animations, tăng timeout hoặc skip. Full rerun **22/22** PASSED, 1.5m (`.tools/p004/e2e-final.log`), gồm CSS zoom 200% desktop và reflow 320px.
+
+## 8. P0 DoD — ma trận nghiệm thu
+
+Đối chiếu đúng 10 điều tại PRD mục 13. Các suite backend bên dưới đã chạy lại
+trên PostgreSQL Testcontainers trong P0-04; không chỉ dẫn số liệu P0-03 cũ.
+Kết quả release cuối cùng phụ thuộc toàn bộ local gates và hosted CI mục 9.
+
+| # | Điều kiện PRD | Evidence thực thi | Kết luận |
+|---|---|---|---|
+| 1 | Hai tài khoản, hai ví 0 VND | `IdentityWalletIntegrationTest.signupProvisionsZeroGraphAndDoesNotLogin`, concurrent signup/provisioning rollback; E2E identity và hai actor Overview dùng registration thật | PASSED local |
+| 2 | Demo funding truy vết ledger theo policy | `FundingIntegrationTest.fundingPostsBalancedLedgerAndReplaysOriginalWithoutQuotaOrAuditAgain`, user/environment quota và UTC rollover; funding E2E | PASSED local |
+| 3 | A→B, số dư chính xác, lịch sử hai phía | `TransferIntegrationTest.successIsAtomicAndCanonicalReplayCannotChangeIntent`, `historyPagesEqualTimestampsFiltersAndKeepsFailuresPrivate`; transfer/Overview E2E thật với A=89996, B=10004, recent limit 5 | PASSED local |
+| 4 | Thiếu tiền, self, LOCKED không đổi tiền | `TransferIntegrationTest.schemaCsrfAndBusinessRejectionsNeverMoveMoney`, immutable failure/replay, recipient lock race; funding locked replay. `OverviewActions.test.tsx` và controlled GET LOCKED kiểm UI, không dùng làm evidence DB lock | PASSED backend + 3 actions unit tests |
+| 5 | Duplicate và overspend | 20 same keys → một posting; 20 distinct keys từ 100000 chuyển 10000 → đúng 10 success; A↔B không deadlock trong `TransferIntegrationTest` | PASSED |
+| 6 | Desktop/mobile, loading/error/success/review/detail | `frontend/e2e/overview.spec.ts` bổ sung recent, independent fetch/error/retry, failed unsigned amount, actor switch/late result; giữ funding/identity/transfer suites; axe, 320px và zoom smoke | PASSED local: 22/22 E2E, axe/reflow/zoom, visual QA |
+| 7 | Validation/authz/migration/integration/CI | Full 50 backend tests gồm schema/CSRF/ownership/roles/guards, Flyway V1–V3; strict frontend/lint/unit/build; CI dùng cùng commands và PostgreSQL thật | Local backend/frontend PASSED; hosted CI pending |
+| 8 | Docker/local tái lập, không secret thật | Compose config/build/up image mới giữ volume; frontend được bundle trong JAR; runtime smoke fresh restart/replay; README commands và `.env.example` local-only, không seed tài khoản/balance | PASSED local packaging/runtime |
+| 9 | MM-01–08, audit/reconciliation/app-role guards | Full funding/transfer tests: audit fault rollback, immutable journal/overflow, quota/concurrency/timeout; snapshot across commit, orphan fixture rollback, CLI fixture exit nonzero; runtime CLI sau E2E | PASSED: MM-01–08, CLI runtime 0 findings |
+| 10 | Session/CSRF/logout/recovery/cache isolation | Identity session/CSRF/logout tests; funding/transfer E2E lost response/re-auth/reload/original-key/manual retry; command/money-cache unit; RecentActivity late actor test và Overview late committed response | PASSED: backend + 26 unit + 22 E2E |
+
+Test sources: [identity](../backend/src/test/java/vn/nexapay/IdentityWalletIntegrationTest.java),
+[funding](../backend/src/test/java/vn/nexapay/FundingIntegrationTest.java),
+[transfer](../backend/src/test/java/vn/nexapay/TransferIntegrationTest.java),
+[Overview E2E](../frontend/e2e/overview.spec.ts). MM-01–08 mapping chi tiết được giữ
+trong [P0-03 acceptance](P0-03-p2p-history.md); lần chạy P0-04 tiếp tục thực thi
+các regression đó, không thay money rules hoặc migrations.
+
+## 9. Commands, reports và bàn giao
+
+- Frontend full unit: **26/26**, 8 files; `npm run test`, lint/strict build/format
+  PASSED. `npm audit --audit-level=moderate`: **0 vulnerabilities**. Evidence tại
+  `.tools/p004/unit-final.log`, `lint-final.log`, `build-final.log`,
+  `format-final.log`, `audit-final.log`.
+- Backend: `./backend/mvnw.cmd -B -ntp -f backend/pom.xml -Pweb verify`:
+  **50/50**, zero failures/errors/skips, 1m48s. Reports trong
+  `backend/target/surefire-reports/`, `.tools/p004/backend.log`.
+- Compose config/build/up và `node infra/runtime-smoke.mjs`: PASSED;
+  `.tools/p004/docker.log`, `runtime-final.log`. V1–V3 không sửa; không reset volume,
+  seed balance hoặc repair. Docker/JAR chứa cùng frontend assets đã build.
+- Full connected `E2E_BASE_URL=http://127.0.0.1:18082 npm run test:e2e`:
+  **22/22**, 1.5m, không skip; `.tools/p004/e2e-final.log`, reports/screenshot trong
+  `frontend/playwright-report/`, `frontend/test-results/` (ignored).
+- Visual QA đã xem desktop/mobile recent và controlled LOCKED; names dài/UUID wrap,
+  unsigned FAILED ghi “Không trừ tiền”, native disabled actions vẫn giữ link tra
+  cứu. Keyboard Tab/Enter kiểm trong actions unit và connected identity/review;
+  axe WCAG2/2.1/2.2 tags, mobile 390px, reflow 320px và CSS zoom 200% desktop pass.
+- Runtime read-only `infra/reconcile.sql` sau full E2E: **0 findings**, exit 0,
+  `.tools/p004/reconcile-final.log`. Fixture corruption/nonzero được full backend
+  kiểm trong transaction rollback; không sửa tiền production/runtime.
+- Hosted CI: pending; chỉ mark P0 DoD closed sau khi run mới thành công.
+
+### Giới hạn được baseline chấp nhận
+
+Chỉ tiền mô phỏng, một instance/session memory. Reload mất draft payload, giữ
+reference để lookup; GET command 404 vẫn UNKNOWN, không kết luận tiền thất bại.
+LOCKED UI fixture chỉ kiểm giao diện; lock/atomicity thật được backend DB tests
+kiểm độc lập. CSS zoom 200% là smoke trong Chromium, không phải chứng nhận
+accessibility hay kiểm mọi thiết bị. Chưa có public hosting/throughput/p95.
+P1a merchant/payment/refund tiếp tục là roadmap, chưa implement trong P0-04.
