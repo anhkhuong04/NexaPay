@@ -59,10 +59,12 @@ class TransferIntegrationTest {
   @Autowired WalletService wallets;
   @Autowired CommandStore commands;
   @MockitoSpyBean AuditService audit;
+  @org.springframework.test.context.bean.override.mockito.MockitoBean Clock clock;
   JdbcTemplate owner;
 
   @BeforeEach
   void setup() {
+    when(clock.instant()).thenReturn(Instant.parse("2026-11-02T05:00:00Z"));
     owner =
         new JdbcTemplate(
             new DriverManagerDataSource(pg.getJdbcUrl(), pg.getUsername(), pg.getPassword()));
@@ -286,5 +288,128 @@ class TransferIntegrationTest {
     assertThatThrownBy(() -> commands.lookup(a.id(), "TRANSFER", key))
         .isInstanceOf(ApiFailure.class);
     healthy();
+  }
+
+  JsonNode getJson(ActorPrincipal actor, String path, int status) throws Exception {
+    var r = mvc.perform(get(path).with(user(actor))).andReturn().getResponse();
+    assertThat(r.getStatus()).isEqualTo(status);
+    return json.readTree(r.getContentAsByteArray());
+  }
+
+  @Test
+  void historyPagesEqualTimestampsFiltersAndKeepsFailuresPrivate() throws Exception {
+    var a = actor();
+    var b = actor();
+    var stranger = actor();
+    fund(a);
+    var failed = transfer(a, UUID.randomUUID(), wallet(b), "100001", "private failure");
+    var first = transfer(a, UUID.randomUUID(), wallet(b), "10000", "Lunch");
+    var second = transfer(a, UUID.randomUUID(), wallet(b), "20000", "Dinner");
+    var page = getJson(a, "/api/v1/transactions?limit=2", 200);
+    assertThat(page.path("items")).hasSize(2);
+    var next =
+        getJson(a, "/api/v1/transactions?limit=2&cursor=" + page.path("nextCursor").asText(), 200);
+    assertThat(next.path("items")).hasSize(2);
+    var ids = new HashSet<String>();
+    page.path("items").forEach(r -> assertThat(ids.add(r.path("id").asText())).isTrue());
+    next.path("items").forEach(r -> assertThat(ids.add(r.path("id").asText())).isTrue());
+    assertThat(next.path("nextCursor").isNull()).isTrue();
+    assertThat(getJson(a, "/api/v1/transactions?type=OUTGOING&status=FAILED", 200).path("items"))
+        .hasSize(1);
+    assertThat(getJson(a, "/api/v1/transactions?type=FUNDING", 200).path("items")).hasSize(1);
+    var incoming = getJson(b, "/api/v1/transactions?type=INCOMING", 200);
+    assertThat(incoming.path("items")).hasSize(2);
+    assertThat(incoming.toString())
+        .doesNotContain("private failure", "command_key", "actorId", first.key().toString());
+    assertThat(getJson(stranger, "/api/v1/transactions", 200).path("items")).isEmpty();
+    getJson(b, "/api/v1/transfers/" + failed.resourceId(), 404);
+    getJson(a, "/api/v1/transfers/" + failed.resourceId(), 200);
+    var detail = getJson(b, "/api/v1/transactions/TRANSFER/" + first.resourceId(), 200);
+    assertThat(detail.path("direction").asText()).isEqualTo("INCOMING");
+    assertThat(detail.path("amount").asText()).isEqualTo("10000");
+    assertThat(detail.path("note").asText()).isEqualTo("Lunch");
+    getJson(stranger, "/api/v1/transfers/" + second.resourceId(), 404);
+    assertThat(
+            getJson(
+                    a,
+                    "/api/v1/transactions?from=2026-11-02T05:00:00Z&to=2026-11-02T05:00:01Z",
+                    200)
+                .path("items"))
+        .hasSize(4);
+    assertThat(getJson(a, "/api/v1/transactions?to=2026-11-02T05:00:00Z", 200).path("items"))
+        .isEmpty();
+    for (String query :
+        List.of(
+            "limit=0",
+            "limit=101",
+            "cursor=bad",
+            "type=PAYMENT",
+            "status=PENDING",
+            "from=tomorrow",
+            "from=2026-11-03T00:00:00Z&to=2026-11-02T00:00:00Z"))
+      getJson(a, "/api/v1/transactions?" + query, 400);
+    healthy();
+  }
+
+  @Test
+  void recipientLookupIsExactMinimalAndThrottledSeparatelyFromMoney() throws Exception {
+    var a = actor();
+    var b = actor();
+    var result = getJson(a, "/api/v1/recipients/" + wallet(b), 200);
+    assertThat(result.size()).isEqualTo(2);
+    assertThat(result.path("walletId").asText()).isEqualTo(wallet(b).toString());
+    assertThat(result.path("displayName").asText()).isEqualTo("Transfer An");
+    getJson(a, "/api/v1/recipients/" + UUID.randomUUID(), 404);
+    for (int i = 0; i < 28; i++) getJson(a, "/api/v1/recipients/" + wallet(b), 200);
+    var blocked =
+        mvc.perform(get("/api/v1/recipients/" + wallet(b)).with(user(a))).andReturn().getResponse();
+    assertThat(blocked.getStatus()).isEqualTo(429);
+    assertThat(blocked.getHeader("Retry-After")).isEqualTo("60");
+    fund(a); // Recipient throttle does not consume command throttle.
+    for (int i = 0; i < 29; i++) transfer(a, UUID.randomUUID(), wallet(b), "1", "");
+    assertThat(postTransfer(a, UUID.randomUUID(), wallet(b), "1", "").getResponse().getStatus())
+        .isEqualTo(429);
+    healthy();
+  }
+
+  @Test
+  void recipientLockRaceAndTimeoutRollBackAllAttempts() throws Exception {
+    var a = actor();
+    var b = actor();
+    fund(a);
+    UUID account = wallets.reference(b.id()).accountId();
+    var pool = Executors.newSingleThreadExecutor();
+    try (Connection c =
+        DriverManager.getConnection(pg.getJdbcUrl(), pg.getUsername(), pg.getPassword())) {
+      c.setAutoCommit(false);
+      try (var p = c.prepareStatement("UPDATE ledger_accounts SET status='LOCKED' WHERE id=?")) {
+        p.setObject(1, account);
+        p.executeUpdate();
+      }
+      var waiting = pool.submit(() -> transfer(a, UUID.randomUUID(), wallet(b), "1", ""));
+      Thread.sleep(150);
+      assertThat(waiting).isNotDone();
+      c.commit();
+      assertThat(waiting.get(10, TimeUnit.SECONDS).error().get("code")).isEqualTo("WALLET_LOCKED");
+      c.setAutoCommit(false);
+      try (var p = c.prepareStatement("SELECT id FROM ledger_accounts WHERE id=? FOR UPDATE")) {
+        p.setObject(1, account);
+        p.executeQuery();
+      }
+      UUID key = UUID.randomUUID();
+      var timed = pool.submit(() -> postTransfer(a, key, wallet(b), "1", "").getResponse());
+      var response = timed.get(12, TimeUnit.SECONDS);
+      assertThat(response.getStatus()).isEqualTo(503);
+      assertThat(json.readTree(response.getContentAsByteArray()).path("code").asText())
+          .isEqualTo("COMMAND_RETRYABLE");
+      c.rollback();
+      assertThatThrownBy(() -> commands.lookup(a.id(), "TRANSFER", key))
+          .isInstanceOf(ApiFailure.class);
+      assertThat(balance(a)).isEqualTo(100000);
+      assertThat(balance(b)).isZero();
+      healthy();
+    } finally {
+      pool.shutdownNow();
+    }
   }
 }

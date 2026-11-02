@@ -46,15 +46,15 @@ MM-01–08; [UI spec](../Docs/NexaPay_UIUX_DESIGN_SPEC_v0.1.md) UI-05–07;
 - [x] V3 terminal transfers + guards + reconciliation giữ đầy đủ checks funding.
   TransferTransaction/Service/Controller; shared MoneyCommandExecutor; recipient
   lookup qua application WalletService, không truy cập repository module khác.
-- [ ] GREEN: PostgreSQL MM-01 (20 keys → 10 success), MM-02 same key/conflict,
+- [x] GREEN: PostgreSQL MM-01 (20 keys → 10 success), MM-02 same key/conflict,
   MM-03 failure replay sau funding, MM-04 audit fault rollback, MM-07 opposite
   direction/lock race/timeout, schema/CSRF/actor isolation. Regression funding.
-- [ ] Commit `feat: add atomic idempotent P2P transfers`.
+- [x] Commit `feat: add atomic idempotent P2P transfers`.
 
 ### Task 2 — Owned history/detail và reconciliation
 
-- [ ] RED: history cursor/filter/detail/privacy integration tests.
-- [ ] History application read models, stable cursor, strict filters; transfer
+- [x] RED: history cursor/filter/detail/privacy integration tests.
+- [x] History application read models, stable cursor, strict filters; transfer
   recipient thấy SUCCEEDED; funding/FAILED chỉ actor. No command key in history.
 - [ ] GREEN: pagination equal timestamps/filter boundaries, ownership 404,
   immutable terminal/link guards; read-only consistent reconciliation 0 findings.
@@ -98,3 +98,8 @@ MM-01–08; [UI spec](../Docs/NexaPay_UIUX_DESIGN_SPEC_v0.1.md) UI-05–07;
   distinct keys → 10 success, 20 same key → 1 posting, A↔B, normalized note replay,
   immutable failure, schema/CSRF và fault sau audit rollback. Lock timeout/race
   transfer và history/reconciliation bổ sung ở mốc kế tiếp.
+
+- Task 2 milestone: history API RED 404 → GREEN; 13/13 focused tests (8 transfer,
+  retry/throttle và architecture). Cursor equal timestamps, UTC [from,to),
+  recipient privacy, detail ownership, shared throttle/lookup 30/min, destination
+  lock race và 3-attempt lock timeout đều pass (`.tools/p003/history.log`).
