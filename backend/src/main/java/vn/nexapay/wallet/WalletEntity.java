@@ -9,6 +9,7 @@ import java.util.UUID;
 class WalletEntity {
   @Id private UUID id;
   private UUID userId;
+  private UUID merchantId;
   private UUID ledgerAccountId;
   private String currency;
 
@@ -22,6 +23,12 @@ class WalletEntity {
     userId = user;
     ledgerAccountId = account;
     currency = "VND";
+  }
+
+  static WalletEntity forMerchant(UUID merchant, UUID account) {
+    WalletEntity wallet = new WalletEntity(null, account);
+    wallet.merchantId = merchant;
+    return wallet;
   }
 
   UUID id() {

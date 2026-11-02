@@ -63,7 +63,8 @@ public class FundingTransaction {
         || !accounts.get(env.issuance()).type().equals("DEMO_ISSUANCE"))
       throw new IllegalStateException("Invalid funding account graph");
     if (!personal.status().equals("ACTIVE")) error = "WALLET_LOCKED";
-    else if (personal.balance() > 1000000000000L - FundingPolicy.PRESET)
+    else if (personal.balance()
+        > vn.nexapay.ledger.AccountLimits.CUSTOMER_MAX - FundingPolicy.PRESET)
       error = "BALANCE_LIMIT_EXCEEDED";
     UUID resource = UUID.randomUUID(), journal = null;
     if (error == null) {

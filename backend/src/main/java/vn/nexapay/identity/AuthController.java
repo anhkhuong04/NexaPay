@@ -28,6 +28,7 @@ public class AuthController {
   private final HttpSessionCsrfTokenRepository csrf;
   private final LoginThrottle throttle;
   private final Clock clock;
+  private final vn.nexapay.merchant.MerchantService merchants;
 
   public AuthController(
       IdentityService identity,
@@ -35,13 +36,15 @@ public class AuthController {
       HttpSessionSecurityContextRepository contexts,
       HttpSessionCsrfTokenRepository csrf,
       LoginThrottle throttle,
-      Clock clock) {
+      Clock clock,
+      vn.nexapay.merchant.MerchantService merchants) {
     this.identity = identity;
     this.manager = manager;
     this.contexts = contexts;
     this.csrf = csrf;
     this.throttle = throttle;
     this.clock = clock;
+    this.merchants = merchants;
   }
 
   public record Register(
@@ -78,7 +81,11 @@ public class AuthController {
   }
 
   public record Session(
-      UUID userId, List<String> roles, Instant authenticatedAt, Instant absoluteExpiresAt) {}
+      UUID userId,
+      List<String> roles,
+      Instant authenticatedAt,
+      Instant absoluteExpiresAt,
+      UUID merchantId) {}
 
   @GetMapping("/csrf")
   Csrf csrf(CsrfToken token) {
@@ -136,6 +143,10 @@ public class AuthController {
 
   private Session summary(ActorPrincipal actor, HttpSession session) {
     Instant start = (Instant) session.getAttribute(SessionExpiryFilter.AUTHENTICATED_AT);
-    return new Session(actor.id(), actor.roles(), start, start.plus(Duration.ofHours(8)));
+    UUID merchantId = merchants.membership(actor.id()).orElse(null);
+    List<String> roles = new ArrayList<>(actor.roles());
+    if (merchantId != null && !roles.contains("MERCHANT")) roles.add("MERCHANT");
+    return new Session(
+        actor.id(), List.copyOf(roles), start, start.plus(Duration.ofHours(8)), merchantId);
   }
 }

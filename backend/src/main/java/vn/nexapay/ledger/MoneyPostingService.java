@@ -56,7 +56,8 @@ public class MoneyPostingService {
     for (Entry entry : entries) {
       Account account = accounts.get(entry.accountId());
       long next = Math.addExact(account.balance(), entry.amount());
-      if (account.type().equals("PERSONAL") && (next < 0 || next > 1000000000000L))
+      if (AccountLimits.customer(account.type())
+          && (next < 0 || next > vn.nexapay.ledger.AccountLimits.CUSTOMER_MAX))
         throw new IllegalArgumentException("Customer balance limit");
     }
     UUID id = UUID.randomUUID();

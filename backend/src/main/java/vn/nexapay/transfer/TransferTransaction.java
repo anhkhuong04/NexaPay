@@ -70,7 +70,8 @@ public class TransferTransaction {
         throw new IllegalStateException("Invalid personal account graph");
       if (!from.status().equals("ACTIVE") || !to.status().equals("ACTIVE")) error = "WALLET_LOCKED";
       else if (from.balance() < intent.amount()) error = "INSUFFICIENT_FUNDS";
-      else if (to.balance() > 1000000000000L - intent.amount()) error = "BALANCE_LIMIT_EXCEEDED";
+      else if (to.balance() > vn.nexapay.ledger.AccountLimits.CUSTOMER_MAX - intent.amount())
+        error = "BALANCE_LIMIT_EXCEEDED";
     }
     UUID resource = UUID.randomUUID(), journal = null;
     if (error == null)

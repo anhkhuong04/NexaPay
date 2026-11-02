@@ -22,6 +22,13 @@ public class LedgerAccounts {
     return id;
   }
 
+  @Transactional(propagation = Propagation.MANDATORY)
+  public UUID openMerchant() {
+    UUID id = UUID.randomUUID();
+    repository.save(new LedgerAccount(id, "MERCHANT"));
+    return id;
+  }
+
   @Transactional(readOnly = true)
   public Snapshot snapshot(UUID id) {
     LedgerAccount a =

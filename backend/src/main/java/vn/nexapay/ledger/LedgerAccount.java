@@ -21,8 +21,12 @@ class LedgerAccount {
   protected LedgerAccount() {}
 
   LedgerAccount(UUID id) {
+    this(id, "PERSONAL");
+  }
+
+  LedgerAccount(UUID id, String type) {
     this.id = id;
-    accountType = "PERSONAL";
+    accountType = type;
     currency = "VND";
     status = "ACTIVE";
   }

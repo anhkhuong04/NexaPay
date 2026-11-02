@@ -1,0 +1,196 @@
+openapi: 3.1.0
+info:
+  title: NexaPay P1a-01 Merchant onboarding and wallet
+  version: 0.1.0
+servers:
+- url: /api/v1
+paths:
+  /merchants:
+    post:
+      summary: Self-onboard one simulated ACTIVE merchant with OWNER and zero wallet
+        atomically
+      description: 'Owner identity is derived from the session. Duplicate or concurrent
+        losing request returns 409; does not rename/create another merchant. No money
+        command or journal is created. Network/technical uncertainty: explicit GET
+        /merchants/me before retry, never auto POST. displayName trim/NFC, 1..80 Unicode
+        code points, reject controls.'
+      security: &id002
+      - sessionCookie: []
+      parameters:
+      - in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody: &id005
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MerchantName'
+      responses:
+        '201':
+          description: Created profile
+          content:
+            application/json:
+              schema: &id003
+                $ref: '#/components/schemas/Merchant'
+        '400': &id006
+          description: Invalid request/name or unknown JSON property
+          content:
+            application/json:
+              schema: &id001
+                $ref: p0-01.openapi.yaml#/components/schemas/Error
+        '401': &id004
+          description: Authentication required
+          content:
+            application/json:
+              schema: *id001
+        '403': &id007
+          description: CSRF invalid
+          content:
+            application/json:
+              schema: *id001
+        '500': &id008
+          description: Technical failure; query /merchants/me before retrying onboarding
+          content:
+            application/json:
+              schema: *id001
+        '409':
+          description: MERCHANT_EXISTS; query own merchant
+          content:
+            application/json:
+              schema: *id001
+  /merchants/me:
+    get:
+      summary: Read merchant through current OWNER membership
+      security: *id002
+      responses:
+        '200':
+          description: Owned profile
+          content:
+            application/json:
+              schema: *id003
+        '401': *id004
+        '404':
+          description: MERCHANT_NOT_FOUND, no owned merchant
+          content:
+            application/json:
+              schema: *id001
+  /merchants/{id}:
+    parameters:
+    - &id009
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      summary: Read owned merchant, unrelated resource returns safe 404
+      security: *id002
+      responses:
+        '200':
+          description: Owned profile
+          content:
+            application/json:
+              schema: *id003
+        '401': *id004
+        '404':
+          description: MERCHANT_NOT_FOUND
+          content:
+            application/json:
+              schema: *id001
+    patch:
+      summary: Rename owned merchant and audit in the same transaction
+      security: *id002
+      parameters:
+      - in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody: *id005
+      responses:
+        '200':
+          description: Persisted profile
+          content:
+            application/json:
+              schema: *id003
+        '400': *id006
+        '401': *id004
+        '403': *id007
+        '500': *id008
+        '404':
+          description: MERCHANT_NOT_FOUND
+          content:
+            application/json:
+              schema: *id001
+  /merchants/{id}/wallet:
+    parameters:
+    - *id009
+    get:
+      summary: Read owned merchant wallet, including LOCKED status; distinct from
+        /wallets/me
+      description: JSON money strings. No funding/P2P routes for this wallet. Account
+        status is separate from merchant profile status.
+      security: *id002
+      responses:
+        '200':
+          description: Owned merchant wallet
+          content:
+            application/json:
+              schema:
+                $ref: p0-01.openapi.yaml#/components/schemas/Wallet
+        '401': *id004
+        '404':
+          description: MERCHANT_NOT_FOUND
+          content:
+            application/json:
+              schema: *id001
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
+  schemas:
+    MerchantName:
+      type: object
+      additionalProperties: false
+      required:
+      - displayName
+      properties:
+        displayName:
+          type: string
+          description: Trim and NFC; 1..80 Unicode code points, no ISO controls before
+            normalization.
+          minLength: 1
+          maxLength: 80
+    Merchant:
+      type: object
+      required:
+      - id
+      - displayName
+      - status
+      - createdAt
+      - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 80
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - LOCKED
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
