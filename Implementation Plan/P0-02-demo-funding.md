@@ -1,7 +1,7 @@
 # P0-02 — Demo funding, ledger và command recovery
 
 **Ngày:** 02/11/2026
-**Trạng thái:** LOCAL_VERIFIED — implementation hoàn tất, chờ hosted CI sau push.
+**Trạng thái:** VERIFIED — F-01–05 hoàn tất; local và hosted CI passed. Toàn bộ P0 chưa Done.
 
 ## Phạm vi và nguồn
 
@@ -43,7 +43,7 @@ Không triển khai P2P/history/merchant/bank; không tuyên bố toàn bộ P0 
 - [x] F-02 MoneyPostingService, quota/funding/terminal commands/audit và retry.
 - [x] F-03 PostgreSQL invariant/concurrency/rollback/recovery tests + reconciliation.
 - [x] F-04 Fluent funding/review/result/recent-command UI + frontend tests/E2E.
-- [ ] F-05 Local packaging/docs đã pass; push/hosted CI đang chốt.
+- [x] F-05 Packaging/docs/commit/push và hosted CI đã pass.
 
 ## Acceptance
 
@@ -58,7 +58,7 @@ Không triển khai P2P/history/merchant/bank; không tuyên bố toàn bộ P0 
 | F-T07 | Account lock race and lock timeout rollback/retry bounded; actor isolation, CSRF/schema/throttle | PASSED — owner lock trước funding; timeout 3 attempts rồi 503/key rollback; actor isolation/CSRF/schema và 30/min throttle |
 | F-T08 | Read-only repeatable-read reconciliation checks projection/journal/operation/quota/issuance; detects corruption | PASSED — consistent read-only snapshot, rolled-back corruption probe, CLI findings exit nonzero; runtime findings 0 |
 | F-T09 | Review→fund→receipt→balance; duplicate/response-loss/reload/re-auth; no optimistic success or automatic resend | PASSED — real browser review/receipt/quota, lost response, reload/re-auth no auto resend; reference/actor/epoch/mutation-cache tests |
-| F-T10 | Lint/typecheck/unit/build, backend regression, desktop/mobile/axe, Docker and hosted CI | PASSED local — backend 39, frontend 12, E2E 8 + final funding 4; axe/reflow/visual QA, Docker, runtime smoke; hosted CI pending |
+| F-T10 | Lint/typecheck/unit/build, backend regression, desktop/mobile/axe, Docker and hosted CI | PASSED local — backend 39, frontend 12, E2E 8 + final funding 4; axe/reflow/visual QA, Docker, runtime smoke; hosted CI PASSED (run 41391311765) |
 
 MM-01 transfer contention, full MM-07 opposite transfers và full P0 reconciliation
 được mở rộng cùng P0-03 P2P/history. Tests funding không thay thế các gates đó.
@@ -80,7 +80,7 @@ frontend build. Kết quả thực tế bên dưới; không coi image build b�
 | Package/Compose | `docker compose --env-file .env -f infra/compose.yaml config --quiet`; `--profile app build app`; `--profile app up -d app` | PASSED; V2 additive applied trên DB local đã có P0-01, không reset volume; image Maven cache mount |
 | Runtime | Root: `node infra/runtime-smoke.mjs` | PASSED restart/persisted wallet/SPA/API routing/default Secure/HttpOnly/Lax cookie |
 | Reconciliation | Root: `Get-Content infra/reconcile.sql -Raw` pipe vào Compose `exec -T db psql -U nexapay_app -d nexapay` | PASSED sau E2E, findings 0. Isolated Testcontainers kiểm CLI nonzero bằng controlled findings; không mutate tiền runtime |
-| Hosted CI | `.github/workflows/ci.yml` thêm reconciliation sau E2E | PENDING first P0-02 push; không claim hosted pass trước khi chạy |
+| Hosted CI | `.github/workflows/ci.yml` thêm reconciliation sau E2E | PASSED — [run 41391311765](https://github.com/anhkhuong04/NexaPay/actions/runs/41391311765), implementation commit `6cf14da`; toàn bộ frontend/backend/runtime/E2E/reconciliation và reports upload thành công |
 
 - Runtime DB giữ nguyên quyền không UPDATE posted_balance. `SELECT FOR UPDATE`
   dùng function lock-only SECURITY DEFINER vì PostgreSQL yêu cầu UPDATE privilege
@@ -98,7 +98,7 @@ frontend build. Kết quả thực tế bên dưới; không coi image build b�
   tái lập được commit. JAR được bundle lại sau frontend build, smoke subprocesses
   được dừng; Docker app local tiếp tục ở 18082. Không public deployment.
 - Milestones: `264fc88` backend/contract/plan; `847f29b` funding/recovery UI;
-  `5575c6b` race/CLI/error regression fixes. Các commit packaging/handoff theo sau.
+  `5575c6b` race/CLI/error regression fixes. `6cf14da` hoàn thiện packaging/CI/docs và push main. Commit sau cùng chỉ cập nhật evidence/tài liệu.
 
 ## Handoff P0-03
 
@@ -108,3 +108,5 @@ Cần MM-01 overspend, A↔B lock order/MM-07 và MM-08 linkage transfer trướ
 Mở rộng command/ledger schema bằng migration mới, không sửa V1/V2 đã apply.
 
 - Packaging regression: phát hiện static assets từ các lần Vite build cũ còn trong JAR local. Profile Maven web dọn riêng target/classes/static trước copy-resources, giữ compiled classes/test reports; kiểm tra danh sách asset trong JAR khớp dist hiện tại.
+
+- Kiểm tra cuối: 18 documents/102 local links/case/fences, 2 OpenAPI files và refs, CI YAML, tracked secrets/cache scan đều pass. JAR chứa đúng 7 file SPA hiện tại, không còn 13 asset cũ; giữ đủ 39 JUnit reports tests. Final Docker build và health UP ở 18082 đã xác nhận.
