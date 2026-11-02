@@ -434,6 +434,44 @@ class RefundIntegrationTest {
                 .getResponse()
                 .getStatus())
         .isEqualTo(400);
+    assertThat(
+            postJson(
+                    f.merchantOwner(),
+                    path(f),
+                    UUID.randomUUID(),
+                    Map.of("amount", "1000", "currency", "USD"))
+                .getResponse()
+                .getStatus())
+        .isEqualTo(400);
+    assertThat(
+            postJson(
+                    f.merchantOwner(),
+                    path(f),
+                    UUID.randomUUID(),
+                    Map.of(
+                        "amount",
+                        "1000",
+                        "currency",
+                        "VND",
+                        "destinationWalletId",
+                        wallets.own(other.id()).id()))
+                .getResponse()
+                .getStatus())
+        .isEqualTo(400);
+    UUID missingKey = UUID.randomUUID();
+    assertThat(
+            postJson(
+                    f.merchantOwner(),
+                    "/merchants/" + f.merchant() + "/payments/" + UUID.randomUUID() + "/refunds",
+                    missingKey,
+                    Map.of("amount", "1", "currency", "VND"))
+                .getResponse()
+                .getStatus())
+        .isEqualTo(404);
+    assertThat(
+            db.queryForObject(
+                "SELECT count(*) FROM money_commands WHERE command_key=?", Long.class, missingKey))
+        .isZero();
     var saved = refund(f, UUID.randomUUID(), "1000");
     var id = saved.path("resourceId").asText();
     getNode(other, "/merchants/" + f.merchant() + "/refunds/" + id, 404);
@@ -491,10 +529,9 @@ class RefundIntegrationTest {
   }
 
   void rawRefund(Fixture f, long amount, long legs) {
-    UUID id = UUID.randomUUID();
+    UUID id = UUID.randomUUID(), rawKey = UUID.randomUUID();
     var claim =
-        commands.claim(
-            f.merchantOwner().id(), "REFUND", UUID.randomUUID(), "raw-test-fixture", Instant.now());
+        commands.claim(f.merchantOwner().id(), "REFUND", rawKey, "raw-test-fixture", Instant.now());
     var journal =
         posting.post(
             "REFUND",
@@ -514,7 +551,7 @@ class RefundIntegrationTest {
     commands.finish(
         claim.id(),
         new CommandStore.Terminal(
-            UUID.randomUUID(), "REFUND", id, "SUCCEEDED", 201, Instant.now(), Map.of(), Map.of()));
+            rawKey, "REFUND", id, "SUCCEEDED", 201, Instant.now(), Map.of(), Map.of()));
   }
 
   @Test

@@ -272,6 +272,10 @@ test("partial and full refunds retain PAID, update merchant totals and original 
     .getByRole("link", { name: "Xem chi tiết", exact: true })
     .first()
     .click();
+  await expect(page).toHaveURL(/\/app\/transactions\/REFUND\/[0-9a-f-]+$/);
+  await expect(
+    page.getByRole("heading", { name: "Chi tiết giao dịch", exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Nhận hoàn tiền", exact: true }),
   ).toBeVisible();
