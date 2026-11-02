@@ -380,7 +380,11 @@ public class PaymentRequests {
       var parts =
           new String(Base64.getUrlDecoder().decode(raw), StandardCharsets.UTF_8).split("\\|", -1);
       if (parts.length != 2) throw new IllegalArgumentException();
-      return new Window(Instant.parse(parts[0]), UUID.fromString(parts[1]));
+      Instant at = Instant.parse(parts[0]);
+      if (at.isBefore(Instant.parse("0001-01-01T00:00:00Z"))
+          || !at.isBefore(Instant.parse("9999-01-01T00:00:00Z")))
+        throw new IllegalArgumentException();
+      return new Window(at, UUID.fromString(parts[1]));
     } catch (RuntimeException e) {
       throw invalid();
     }

@@ -201,6 +201,13 @@ class PaymentIntegrationTest {
     getNode(a, path + "?status=FAILED", 400);
     getNode(a, path + "?limit=0", 400);
     getNode(a, path + "?cursor=bad", 400);
+    String outside =
+        Base64.getUrlEncoder()
+            .withoutPadding()
+            .encodeToString(
+                ("+999999999-01-01T00:00:00Z|" + UUID.randomUUID())
+                    .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    getNode(a, path + "?cursor=" + outside, 400);
     healthy();
   }
 
