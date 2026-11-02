@@ -28,6 +28,10 @@ class WalletEntity {
     return id;
   }
 
+  UUID user() {
+    return userId;
+  }
+
   UUID account() {
     return ledgerAccountId;
   }

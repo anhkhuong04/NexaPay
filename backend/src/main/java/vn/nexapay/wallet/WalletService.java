@@ -10,10 +10,15 @@ import vn.nexapay.shared.ApiFailure;
 public class WalletService {
   private final WalletRepository repository;
   private final LedgerAccounts accounts;
+  private final vn.nexapay.profile.ProfileService profiles;
 
-  public WalletService(WalletRepository repository, LedgerAccounts accounts) {
+  public WalletService(
+      WalletRepository repository,
+      LedgerAccounts accounts,
+      vn.nexapay.profile.ProfileService profiles) {
     this.repository = repository;
     this.accounts = accounts;
+    this.profiles = profiles;
   }
 
   public record Wallet(
@@ -25,6 +30,15 @@ public class WalletService {
       String totalBalance) {}
 
   public record Reference(UUID walletId, UUID accountId) {}
+
+  public record Recipient(UUID walletId, UUID accountId, String displayName) {}
+
+  @Transactional(readOnly = true)
+  public java.util.Optional<Recipient> recipient(UUID id) {
+    return repository
+        .findById(id)
+        .map(w -> new Recipient(w.id(), w.account(), profiles.name(w.user())));
+  }
 
   @Transactional(readOnly = true)
   public Reference reference(UUID user) {

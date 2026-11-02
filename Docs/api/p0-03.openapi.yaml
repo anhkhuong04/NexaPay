@@ -1,0 +1,408 @@
+openapi: 3.1.0
+info:
+  title: NexaPay P0-03 P2P and owned history
+  version: 0.1.0
+  description: Simulated VND. Session/CSRF same-origin/no-store. Fee zero; amount
+    string. Source from actor. Failed business commits command/audit, technical errors
+    rollback. Client timeout is UNKNOWN. See p0-02 for recent commands and shared
+    envelope.
+servers:
+- url: /api/v1
+security:
+- session: []
+paths:
+  /transfers:
+    post:
+      operationId: createTransfer
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: X-CSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferInput'
+      responses:
+        '201':
+          description: Committed balanced P2P or identical replay
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Command'
+        '422':
+          description: Committed business rejection, no posting; terminal replay
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Command'
+        '400': &id004
+          description: Invalid schema/key/filter/cursor; no claim
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401': &id001
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: CSRF denied; no claim
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404': &id002
+          description: Not observed or unrelated resource
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Idempotency fingerprint conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '413':
+          description: Body exceeds 16 KiB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429': &id003
+          description: Shared money throttle or separate recipient throttle; Retry-After
+            60
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: COMMAND_RETRYABLE after confirmed rollback, or COMMAND_UNRESOLVED;
+            keep original key/payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /transfers/capabilities:
+    get:
+      operationId: transferCapabilities
+      responses:
+        '200':
+          description: Current P0 limits and persisted environment epoch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Capabilities'
+        '401': *id001
+  /recipients/{walletId}:
+    get:
+      operationId: exactRecipient
+      parameters:
+      - name: walletId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Exact public wallet ID; no email/balance/status/directory
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recipient'
+        '401': *id001
+        '404': *id002
+        '429': *id003
+  /transactions:
+    get:
+      operationId: transactionHistory
+      description: Owned records only; failed outgoing/funding actor only; incoming
+        only SUCCEEDED. Newest createdAt,id, stable cursor. UTC from inclusive/to
+        exclusive; limit 1..100 default20.
+      parameters:
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+      - name: type
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Owned page
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transaction'
+                  nextCursor:
+                    type:
+                    - string
+                    - 'null'
+        '400': *id004
+        '401': *id001
+  /transactions/{type}/{id}:
+    get:
+      operationId: transactionDetail
+      parameters:
+      - name: type
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Owned detail, type TRANSFER or DEMO_FUNDING
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '401': *id001
+        '404': *id002
+  /transfers/{id}:
+    get:
+      operationId: transferDetail
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Initiator or recipient of SUCCEEDED, otherwise 404
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '401': *id001
+        '404': *id002
+  /commands/{type}/{key}:
+    get:
+      operationId: lookupMoneyCommand
+      parameters:
+      - name: type
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Actor terminal command. TRANSFER or DEMO_FUNDING. Original
+            HTTP status retained.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Command'
+        '404': *id002
+        '401': *id001
+components:
+  securitySchemes:
+    session:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
+  schemas:
+    TransferInput:
+      type: object
+      additionalProperties: false
+      required:
+      - destinationWalletId
+      - amount
+      - currency
+      properties:
+        destinationWalletId:
+          type: string
+          format: uuid
+        amount:
+          type: string
+          pattern: ^[1-9][0-9]{0,8}$
+          description: Canonical integer 1..100000000 VND; numbers rejected.
+        currency:
+          const: VND
+        note:
+          type: string
+          maxLength: 140
+          description: NFC then strip, max 140 code points, no controls; omitted equals
+            empty.
+    Command:
+      type: object
+      required:
+      - key
+      - operationType
+      - resourceId
+      - status
+      - originalHttpStatus
+      - createdAt
+      - result
+      - error
+      properties:
+        key:
+          type: string
+          format: uuid
+        operationType:
+          enum:
+          - TRANSFER
+          - DEMO_FUNDING
+        resourceId:
+          type: string
+          format: uuid
+        status:
+          enum:
+          - SUCCEEDED
+          - FAILED
+        originalHttpStatus:
+          enum:
+          - 201
+          - 422
+        createdAt:
+          type: string
+          format: date-time
+        result:
+          type: object
+          additionalProperties: true
+        error:
+          type: object
+          additionalProperties:
+            type: string
+    Transaction:
+      type: object
+      required:
+      - id
+      - operationType
+      - direction
+      - status
+      - amount
+      - currency
+      - fee
+      - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        operationType:
+          enum:
+          - TRANSFER
+          - DEMO_FUNDING
+        direction:
+          enum:
+          - INCOMING
+          - OUTGOING
+          - FUNDING
+        status:
+          enum:
+          - SUCCEEDED
+          - FAILED
+        amount:
+          type: string
+          pattern: ^[1-9][0-9]*$
+        currency:
+          const: VND
+        fee:
+          const: '0'
+        sourceWalletId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        destinationWalletId:
+          type: string
+          format: uuid
+        senderName:
+          type: string
+        recipientName:
+          type: string
+        note:
+          type: string
+        ledgerTransactionId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        errorCode:
+          type:
+          - string
+          - 'null'
+        createdAt:
+          type: string
+          format: date-time
+    Recipient:
+      type: object
+      additionalProperties: false
+      required:
+      - walletId
+      - displayName
+      properties:
+        walletId:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+    Capabilities:
+      type: object
+      properties:
+        environmentEpoch:
+          type: string
+          format: uuid
+        minAmount:
+          const: '1'
+        maxAmount:
+          const: '100000000'
+        maxBalance:
+          const: '1000000000000'
+        fee:
+          const: '0'
+        currency:
+          const: VND
+        noteMaxLength:
+          const: 140
+    Error:
+      $ref: ./p0-02.openapi.yaml#/components/schemas/Error

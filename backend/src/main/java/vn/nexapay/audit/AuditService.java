@@ -21,6 +21,13 @@ public class AuditService {
   }
 
   @Transactional(propagation = Propagation.MANDATORY)
+  public void money(
+      UUID actor, String operation, UUID resource, String status, String correlation) {
+    repository.save(
+        new AuditEvent(actor, operation, resource, correlation, clock.instant(), status));
+  }
+
+  @Transactional(propagation = Propagation.MANDATORY)
   public void money(UUID actor, UUID resource, String status, String correlation) {
     repository.save(
         new AuditEvent(actor, "DEMO_FUNDING", resource, correlation, clock.instant(), status));

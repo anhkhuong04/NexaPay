@@ -19,7 +19,7 @@ class FundingServiceTest {
     var clock = mock(Clock.class);
     var now = new AtomicReference<>(Instant.EPOCH);
     when(clock.instant()).thenAnswer(i -> now.get());
-    var service = new FundingService(tx, clock);
+    var service = new FundingService(tx, new vn.nexapay.command.MoneyCommandExecutor(clock));
     var actor = UUID.randomUUID();
     for (int i = 0; i < 30; i++) service.fund(actor, UUID.randomUUID(), "test");
     assertThatThrownBy(() -> service.fund(actor, UUID.randomUUID(), "test"))
@@ -33,7 +33,8 @@ class FundingServiceTest {
   @Test
   void retryOnlyConfirmedRollbackAtMostThreeAttemptsAndNeverConnectionUncertainty() {
     var tx = mock(FundingTransaction.class);
-    var service = new FundingService(tx, Clock.systemUTC());
+    var service =
+        new FundingService(tx, new vn.nexapay.command.MoneyCommandExecutor(Clock.systemUTC()));
     UUID actor = UUID.randomUUID(), key = UUID.randomUUID();
     when(tx.execute(any(), any(), any()))
         .thenThrow(

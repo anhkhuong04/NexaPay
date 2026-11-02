@@ -26,7 +26,11 @@ public class ErrorHandler {
     var response = errors.response(r, e.status(), e.code(), e.getMessage(), e.fields());
     if (e.status() == 429)
       return ResponseEntity.status(429)
-          .header("Retry-After", e.code().equals("COMMAND_THROTTLED") ? "60" : "900")
+          .header(
+              "Retry-After",
+              (e.code().equals("COMMAND_THROTTLED") || e.code().equals("RECIPIENT_THROTTLED"))
+                  ? "60"
+                  : "900")
           .body(response.getBody());
     return response;
   }
