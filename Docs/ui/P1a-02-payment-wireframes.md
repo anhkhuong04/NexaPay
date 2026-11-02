@@ -1,6 +1,6 @@
 # P1a-02 — Payment Request & Checkout states
 
-**02/11/2026 — Implementation; execution evidence trong [slice plan](<../../Implementation Plan/P1a-02-payment-checkout.md>).**
+**02/11/2026 — VERIFIED local + hosted CI; execution evidence trong [slice plan](<../../Implementation Plan/P1a-02-payment-checkout.md>).**
 
 Routes: `/business/payment-requests`, `/business/payment-requests/new`,
 `/business/payment-requests/:id`, `/business/transactions`, public `/pay/:ref`.

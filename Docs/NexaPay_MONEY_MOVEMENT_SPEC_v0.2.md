@@ -2,6 +2,7 @@
 
 **Status:** ACCEPTED design baseline; chưa phải implementation/test report  
 **Date:** 2026-11-01  
+**Updated:** 2026-11-02 — P1a-02 implementation references<br>
 **Decision source:** [ADR-001](adr/ADR-001-project-baseline.md)  
 **Related:** [PRD](NexaPay_PRD_v0.1.md), [Architecture](NexaPay_SYSTEM_ARCHITECTURE_v0.1.md)
 

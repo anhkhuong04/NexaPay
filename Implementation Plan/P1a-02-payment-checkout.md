@@ -2,7 +2,7 @@
 
 **Ngày:** 02/11/2026
 
-**Trạng thái:** IN PROGRESS, base `d65eab6`, branch `feat/p1a-02-payment-checkout`.
+**Trạng thái:** VERIFIED local + GitHub Actions, base `d65eab6`, branch `feat/p1a-02-payment-checkout`.
 
 ## Goal và scope
 
@@ -65,10 +65,10 @@ bank không thuộc slice này. Giữ V1–V4, không seed/repair/reset tiền.
 - [x] 2. Typed UI/create/list/detail/QR/checkout/review/recovery/history/business
   queries. Unit behavioral regressions và connected two actors, loss/re-auth/reload,
   no pre-review POST, owner-only data; commit UI milestone.
-- [ ] 3. Full frontend format/lint/test/build/audit; backend `-Pweb clean verify`
+- [x] 3. Full frontend format/lint/test/build/audit; backend `-Pweb clean verify`
   PostgreSQL Testcontainers. Compose config/build/up giữ volume; E2E desktop/mobile,
   packaged restart payment lookup/replay, migration preservation, CLI findings=0.
-- [ ] 4. Review actual diff/guards/recovery; docs OpenAPI/state/README/index/evidence;
+- [x] 4. Review actual diff/guards/recovery; docs OpenAPI/state/README/index/evidence;
   commit/push main và hosted CI pass trước VERIFIED. P1a-03 refund là handoff.
 
 ## Execution evidence
@@ -125,7 +125,48 @@ payer LOCKED vẫn nhận nghĩa vụ refund theo baseline; không thay original
 
 - Local full connected regression **36/36**, 3m48s, sau login-prompt fix và thêm
   checkout320px/zoom200/cancel44px assertions. Minor final control/link sizing
-  polish đã strict build; final-image regression/runtime đang chạy. Frontend
+  polish đã strict build; final-image regression/runtime PASS theo evidence bên dưới. Frontend
   format/lint PASS, npm audit0; OpenAPI **197 refs** resolve, Markdown **67 links**
   đúng case/fences. Packaged SPA **8 files** byte-identical; repackage sau CSS-only
   polish không rerun Java tests đã pass74, không che failure/skips trong full gate.
+
+## Final local verification
+
+- Final image/SPA strict build, format/lint: PASS; unit **44/44** (12 files),
+  audit **0 vulnerabilities**. Backend full clean **74/74**, 0 failed/error/skipped.
+- Final-image connected **36/36**, 3m24s (`.tools/p1a02/e2e-full-final.log`), includes
+  P0/P1a-01 regressions plus payment desktop/mobile, keyboard/axe/320px/CSS zoom200%,
+  real QR decode, lost create/pay response, re-auth/manual same-key retry, reload,
+  failed attempt→new success and late response navigation invalidation.
+- Final packaged runtime smoke PASS (`.tools/p1a02/runtime-final.log`): deep links,
+  session invalidation, persisted merchant capture/command lookup/replay/history,
+  source5000/merchant5000 and personal/merchant isolation after restart; default
+  cookie Secure/HttpOnly/Lax. JAR contains **8 byte-identical final dist files**.
+- Compose config/build/up PASS giữ volume; V4→V5 preservation PASS. Read-only
+  REPEATABLE READ reconciliation snapshot **0 findings**, exit0
+  (`.tools/p1a02/reconcile-final.log`); không repair/reset/seed tiền.
+- Milestones pushed `main`: `7a6592c` backend, `a258176` cursor bounds,
+  `c4357b0` UI, `129d5e2` runtime/docs. Hosted gates ở
+  [GitHub Actions run41415594033](https://github.com/anhkhuong04/NexaPay/actions/runs/41415594033),
+  code SHA `129d5e2a3077bbdae5cba56a2c338349a530819a`; PASSED toàn bộ gates.
+- Local Compose: `http://127.0.0.1:18082`; Business → Yêu cầu thanh toán → Tạo
+  yêu cầu; mở link/QR bằng actor khác để review/pay. Volume và dữ liệu cũ giữ nguyên.
+
+## Hosted verification và bàn giao
+
+**PASSED:** [GitHub Actions run41415594033](https://github.com/anhkhuong04/NexaPay/actions/runs/41415594033),
+branch `main`, code/evidence commit `129d5e2a3077bbdae5cba56a2c338349a530819a`.
+
+- Fresh npm ci/format/lint/strict build PASS; **44/44** unit, 12 files;
+  npm audit **0 vulnerabilities**.
+- PostgreSQL Testcontainers + packaged backend **74/74**, 0 failures/errors/skips,
+  Maven BUILD SUCCESS. Bao gồm toàn bộ P0/P1a-01 và payment guards/concurrency/
+  expiry/atomic rollback/privacy/replay.
+- Same-origin packaged runtime routing, restart invalidation, persisted merchant
+  capture/lookup/replay/history, membership và default cookie: PASS.
+- Connected Chromium desktop/mobile **36/36**, 3.1m. QR roundtrip, two-actor payment,
+  no POST before review, failed→new intent success, response loss/re-auth/reload/
+  same-key retry, pending navigation, keyboard/axe/reflow/zoom: PASS.
+- Read-only reconciliation **0 findings**, exit0; artifact upload PASS.
+  Không còn failed/skipped release gates của P1a-02. Final docs commit chỉ cập nhật
+  evidence sau CI, không đổi runtime; P1a-02 hoàn tất, tiếp theo P1a-03 refund.

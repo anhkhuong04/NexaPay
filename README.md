@@ -208,6 +208,9 @@ onboarding/profile/wallet. Xem [plan/evidence](<Implementation Plan/P1a-01-merch
 
 ## Payment Request & Checkout — P1a-02
 
+**VERIFIED:** 74 backend / 44 frontend unit / 36 E2E, runtime restart và
+reconciliation **0 findings**; [GitHub Actions](https://github.com/anhkhuong04/NexaPay/actions/runs/41415594033).
+
 Doanh nghiệp → “Yêu cầu thanh toán” → “Tạo yêu cầu”: nhập số tiền 1..100.000.000
 VND, mô tả và thời hạn 5 phút..24 giờ (mặc định30 phút). Detail cung cấp URL cùng
 origin và QR; chỉ yêu cầu PENDING có thể hủy qua bước xác nhận. Metadata immutable,

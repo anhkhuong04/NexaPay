@@ -2,6 +2,7 @@
 
 **Status:** ACCEPTED behavior baseline; visual measurements cần kiểm chứng qua prototype  
 **Date:** 2026-11-01  
+**Updated:** 2026-11-02 — P1a-02 implementation references<br>
 **Based on:** [Context](NexaPay_Context.md), [PRD](NexaPay_PRD_v0.1.md), [Architecture](NexaPay_SYSTEM_ARCHITECTURE_v0.1.md), [ADR-001](adr/ADR-001-project-baseline.md), [Money Movement](NexaPay_MONEY_MOVEMENT_SPEC_v0.2.md)  
 **Product:** Responsive web; Wallet P0, Merchant/Checkout/Refund P1a, Console/notification/CSV P1b, Mock Banking P1c.
 
