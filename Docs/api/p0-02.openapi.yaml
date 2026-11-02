@@ -305,8 +305,11 @@ components:
           format: date-time
         result:
           type: object
-          description: 'Success: amount/currency/walletId/ledgerTransactionId. Failure:
-            empty. Does not represent current balance.'
+          description: 'Stored operation-specific result, never current balance. Funding
+            success has amount/currency/walletId/ledgerTransactionId and failure is empty.
+            Transfer/payment/refund retain original amount/currency/fee/party/note metadata
+            on terminal success or rejection. Successful posting adds ledgerTransactionId;
+            PAYMENT adds paymentId/requestRef and REFUND includes paymentId/merchantId.'
         error:
           type: object
           description: Failure code/message; empty on success.

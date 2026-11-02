@@ -238,8 +238,10 @@ V5 additive đã kiểm chứng giữ dữ liệu V4; không reset volume. Xem
 
 ## Full/Partial Refund — P1a-03
 
-Local verified: **85 backend / 51 frontend unit / 44 E2E**; packaged refund
-lookup/replay/history sau restart PASS. Hosted CI đang chờ, xem plan/evidence.
+**VERIFIED:** 85 backend / 51 frontend unit / 44 E2E; packaged refund
+lookup/replay/history sau restart PASS, reconciliation **0 findings**;
+[GitHub Actions](https://github.com/anhkhuong04/NexaPay/actions/runs/41441983900). P1a DoD/MM-09 đã đóng;
+P1b tiếp theo, xem plan/evidence.
 
 Từ request đã thanh toán hoặc “Thanh toán đã nhận”, chọn “Hoàn tiền”. Form hiển
 thị tiền gốc/đã hoàn/còn được hoàn và payer gốc. Nhập một phần hoặc chọn “Hoàn

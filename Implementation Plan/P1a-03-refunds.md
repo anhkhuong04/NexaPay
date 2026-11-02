@@ -1,7 +1,7 @@
 # P1a-03 — Full/Partial Refund
 
 **Ngày:** 02/11/2026
-**Trạng thái:** LOCAL VERIFIED; hosted CI pending; base `0e106df`, branch `feat/p1a-03-refunds`.
+**Trạng thái:** VERIFIED local + GitHub Actions; P1a DoD closed; base `0e106df`, branch `feat/p1a-03-refunds`.
 
 ## Goal và baseline
 
@@ -52,7 +52,7 @@ Không có pending debt, webhook/notification/Console/mock bank hoặc real mone
 - [x] 3. Full format/lint/unit/strict build/audit, backend PostgreSQL clean verify,
   packaged smoke restart/refund replay, V5→V6 preservation, Compose giữ volume,
   desktop/mobile regression và read-only reconcile0.
-- [ ] 4. Inline review actual diff/invariants; sync docs/contracts/index/evidence,
+- [x] 4. Inline review actual diff/invariants; sync docs/contracts/index/evidence,
   commit/push main, hosted CI pass trước VERIFIED. Đánh giá P1a gate theo evidence;
   P1b tiếp theo, không triển khai trong slice này.
 
@@ -72,7 +72,7 @@ Không có pending debt, webhook/notification/Console/mock bank hoặc real mone
   direct balance seed/edit và không tạo runtime endpoint tiêu tiền merchant.
 - Shared OpenAPI command schema trước đây còn const DEMO_FUNDING dù payment
   reference dùng schema đó; sửa thành generic operation enum khớp API đã có.
-  V6 additive chưa apply volume local, chưa đánh dấu full/runtime/UI gates đạt.
+  Tại backend milestone: V6 chưa apply volume local; full/runtime/UI gates còn pending (đã đóng ở final evidence bên dưới).
 
 - Backend full clean packaged gate: **85/85**, 0 failures/errors/skips, BUILD
   SUCCESS3m22s, `./backend/mvnw.cmd -f backend/pom.xml -B -ntp -Pweb spotless:apply clean verify`.
@@ -152,3 +152,40 @@ hosting, benchmark hoặc accessibility certification; P1b chưa được triể
 - Final read-only REPEATABLE READ reconciliation **0 findings**, exit0,
   `.tools/p1a03/reconcile-final.log`; không sửa/seed/reset tiền. Mọi local gate đã
   đạt trước merge; hosted gate còn pending. Dữ liệu/volume được giữ nguyên.
+- Final docs review: shared Command.result description đã đồng bộ cho
+  funding/transfer/payment/refund (business rejection có thể giữ original metadata;
+  không phải current balance). Đây là contract prose, không đổi runtime/CI input.
+
+## Hosted verification và bàn giao
+
+**PASSED:** [GitHub Actions run41441983900](https://github.com/anhkhuong04/NexaPay/actions/runs/41441983900),
+branch `main`, code/evidence SHA `1051349a3fb89883f6c3ddfdf0e910cd654ee03b`.
+
+- Fresh npm ci/format/lint/strict build PASS; **51/51** unit, 13 files;
+  audit **0 vulnerabilities**.
+- PostgreSQL integration và packaged backend **85/85**, 0 failures/errors/skips,
+  BUILD SUCCESS. Bao gồm P0/P1a-01/02 regression cùng full/partial refund,
+  same-key replay/different-key races, exact reverse legs/aggregate/permissions,
+  original payer LOCKED, merchant insufficient/locked terminal rejection,
+  rollback/audit và ownership/privacy/security.
+- Same-origin packaged SPA/API, refund deep links, restart invalidation,
+  persisted refund lookup/replay/original-payer incoming history, unchanged
+  original PAID/PARTIAL và default Secure/HttpOnly/Lax cookie: PASS.
+- Chromium desktop/mobile **44/44**, 3.7m. Full journeys payment/refund, review
+  trước POST, partial→full, response loss/re-auth/reload/no autoPOST, cross-screen
+  recovery, late Overview refresh, keyboard/axe/320px/CSS zoom200%: PASS.
+- Read-only reconciliation **0 findings**, exit0; reports/artifact upload PASS.
+  Không còn failed/skipped release gate của slice. Commit docs sau CI chỉ ghi
+  evidence/contract prose, không đổi runtime hoặc CI inputs.
+- Milestones pushed `main`: `351a790` backend, `0749d4d` UI, `ae09ba4` checks,
+  `1051349` packaged smoke/docs/local evidence. Sau interruption đã kiểm tra và
+  tiếp tục các task còn lại, giữ nguyên commits/data/volume, không làm lại scope.
+
+**P1a Done:** FR-M01/P01/P02/P03/R01, US-07/08/09 và UI-S4 đã có evidence qua
+P1a-01/02/03; MM-09 pay/expire/cancel + concurrent partial refunds đã đạt theo
+mapping trên. P0 vẫn xanh. Giới hạn một-instance/session memory, simulated funds,
+lookup-only sau reload, chưa public deployment/benchmark/accessibility certification.
+Local app: `http://127.0.0.1:18082`; Business → Thanh toán đã nhận → Hoàn tiền.
+
+Tiếp theo là P1b operations/notification/webhook/Console/CSV theo baseline; lập
+slice plan riêng khi bắt đầu. Không có phần P1b được triển khai trong task này.
