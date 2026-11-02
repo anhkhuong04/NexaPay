@@ -1,3 +1,4 @@
+import { MerchantOnboarding, BusinessPage } from "./MerchantPages";
 import { useEffect, useState } from "react";
 import { Button, Field, Input } from "@fluentui/react-components";
 import {
@@ -420,6 +421,7 @@ function Protected() {
 }
 
 function AppShell({ session }: { session: Session }) {
+  const business = useLocation().pathname.startsWith("/business");
   const client = useQueryClient();
   const navigate = useNavigate();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -446,33 +448,58 @@ function AppShell({ session }: { session: Session }) {
         <Link to="/app/overview" aria-label="NexaPay — tổng quan">
           <Brand />
         </Link>
-        <div className="workspace-label">VÍ CÁ NHÂN</div>
-        <nav aria-label="Ví cá nhân">
-          <NavLink to="/app/overview">
-            <Home24Regular aria-hidden />
-            Tổng quan
-          </NavLink>
-          <NavLink to="/app/send">
-            <ArrowRight24Regular aria-hidden />
-            Chuyển tiền
-          </NavLink>
-          <NavLink to="/app/transactions">
-            <ArrowClockwise24Regular aria-hidden />
-            Lịch sử giao dịch
-          </NavLink>
-          <NavLink to="/app/profile">
-            <Person24Regular aria-hidden />
-            Hồ sơ của tôi
-          </NavLink>
-          <NavLink to="/app/add-demo-funds">
-            <Wallet24Regular aria-hidden />
-            Nhận tiền demo
-          </NavLink>
-          <NavLink to="/app/commands">
-            <ArrowClockwise24Regular aria-hidden />
-            Thao tác đã lưu
+        <nav className="workspace-switcher" aria-label="Không gian làm việc">
+          <NavLink to="/app/overview">Ví cá nhân</NavLink>
+          <NavLink
+            to={
+              session.merchantId ? "/business/overview" : "/business/onboarding"
+            }
+          >
+            Doanh nghiệp
           </NavLink>
         </nav>
+        <div className="workspace-label">
+          {business ? "DOANH NGHIỆP" : "VÍ CÁ NHÂN"}
+        </div>
+        {business ? (
+          <nav aria-label="Doanh nghiệp">
+            <NavLink to="/business/overview">
+              <Home24Regular aria-hidden />
+              Tổng quan doanh nghiệp
+            </NavLink>
+            <NavLink to="/business/settings">
+              <Person24Regular aria-hidden />
+              Cài đặt doanh nghiệp
+            </NavLink>
+          </nav>
+        ) : (
+          <nav aria-label="Ví cá nhân">
+            <NavLink to="/app/overview">
+              <Home24Regular aria-hidden />
+              Tổng quan
+            </NavLink>
+            <NavLink to="/app/send">
+              <ArrowRight24Regular aria-hidden />
+              Chuyển tiền
+            </NavLink>
+            <NavLink to="/app/transactions">
+              <ArrowClockwise24Regular aria-hidden />
+              Lịch sử giao dịch
+            </NavLink>
+            <NavLink to="/app/profile">
+              <Person24Regular aria-hidden />
+              Hồ sơ của tôi
+            </NavLink>
+            <NavLink to="/app/add-demo-funds">
+              <Wallet24Regular aria-hidden />
+              Nhận tiền demo
+            </NavLink>
+            <NavLink to="/app/commands">
+              <ArrowClockwise24Regular aria-hidden />
+              Thao tác đã lưu
+            </NavLink>
+          </nav>
+        )}
         <div className="sidebar-bottom">
           <ShieldCheckmark24Regular aria-hidden />
           <strong>Không gian mô phỏng</strong>
@@ -486,7 +513,8 @@ function AppShell({ session }: { session: Session }) {
       <div className="app-body">
         <header className="app-header">
           <span className="app-section">
-            Ví cá nhân <span className="header-demo">Demo</span>
+            {business ? "Doanh nghiệp" : "Ví cá nhân"}{" "}
+            <span className="header-demo">Demo</span>
           </span>
           <div className="header-account">
             <span className="avatar" aria-hidden>
@@ -787,6 +815,12 @@ export function App() {
         <Route path="/auth" element={<AuthLayout />}>
           <Route path="sign-in" element={<SignIn />} />
           <Route path="sign-up" element={<SignUp />} />
+        </Route>
+        <Route path="/business" element={<Protected />}>
+          <Route index element={<Navigate to="overview" replace />} />
+          <Route path="onboarding" element={<MerchantOnboarding />} />
+          <Route path="overview" element={<BusinessPage />} />
+          <Route path="settings" element={<BusinessPage settings />} />
         </Route>
         <Route path="/app" element={<Protected />}>
           <Route index element={<Navigate to="overview" replace />} />

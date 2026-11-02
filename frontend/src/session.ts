@@ -57,6 +57,9 @@ export async function replaceActor(
 export function safeReturnTo(value: unknown) {
   return typeof value === "string" &&
     [
+      "/business/onboarding",
+      "/business/overview",
+      "/business/settings",
       "/app/profile",
       "/app/add-demo-funds",
       "/app/commands",

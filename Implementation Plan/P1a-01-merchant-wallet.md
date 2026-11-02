@@ -45,7 +45,7 @@ Không KYC/staff/multi-merchant, payment/refund/Console/API khóa ví hoặc see
 - [x] 1. PostgreSQL integration RED: create/query/update/auth/ownership, concurrent
   onboarding, fault audit rollback, DB guards, P0 personal isolation. Implement V4
   và public module APIs, focused GREEN. Commit migration/API milestone.
-- [ ] 2. Fluent typed API/routes/workspace navigation; focused behavioral unit tests,
+- [x] 2. Fluent typed API/routes/workspace navigation; focused behavioral unit tests,
   no actor/merchant cache mixing; connected onboarding→business→rename→personal,
   reload/re-auth, duplicate/lost response recovery. Commit UI milestone.
 - [ ] 3. Full backend PostgreSQL `./backend/mvnw.cmd -B -ntp -f backend/pom.xml -Pweb verify`;
@@ -83,3 +83,24 @@ Không KYC/staff/multi-merchant, payment/refund/Console/API khóa ví hoặc see
 - Compose config/build/up PASS, existing volume retained. Before/after snapshot of
   every existing account/balance/status/wallet owner and journal/audit counts is
   byte-identical (`.tools/p1a01/upgrade-result.log`); no seed/repair/reset.
+
+- Review trước release: self-review module boundaries/ownership/guards/recovery,
+  React hooks/API/cache/a11y checklist theo skills; không gọi đây là independent
+  reviewer sign-off. Bổ sung 401 handling ở explicit GET recovery; **34/34** unit
+  pass. UI strings tránh diễn giải implementation; mobile card spacing/44px reload
+  được chỉnh sau visual QA. Full runtime/visual bản cuối vẫn là gate bắt buộc.
+- Packaged smoke phát hiện local stale SpaController.class thiếu business routes
+  trong khi Docker fresh build trả 200. Source thay đổi lúc javac đang chạy khiến
+  class output mới timestamp nhưng nội dung cũ, Maven incremental bỏ qua. Chạy lại
+  `clean verify` sau frontend build thay vì chấp nhận artifact cũ; lỗi này không
+  được tính là gate PASS. `.tools/p1a01/runtime-stale-artifact.log`.
+
+- UI/connected milestone: full P0+merchant **28/28** E2E pass, 3.2m. Sau mobile
+  layout polish, merchant rerun bản image cuối **6/6**, 1.1m, không skip/retry.
+  Keyboard Enter submit, axe WCAG2/2.1/2.2 tags, 320px, CSS zoom 200% desktop và
+  visual desktop/mobile overview/settings/LOCKED fixture đã xem; name/UUID wrap.
+  `.tools/p1a01/e2e-full.log`, `e2e-visual-final.log`; screenshots/reports ignored.
+- Clean artifact gate: `-Pweb clean verify` **60/60**, 0 failed/errors/skips,
+  BUILD SUCCESS, 2m19s (`.tools/p1a01/backend-full.log`). Compiled SpaController có
+  business deep links; 7 frontend dist files byte-identical trong JAR. Packaged
+  restart smoke hiện đang chạy; chỉ mark release sau output PASS và hosted CI.

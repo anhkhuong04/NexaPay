@@ -1,6 +1,7 @@
 export interface Session {
   userId: string;
   roles: string[];
+  merchantId?: string | null;
   authenticatedAt: string;
   absoluteExpiresAt: string;
 }
@@ -73,7 +74,7 @@ export async function request<T>(
   return body as T;
 }
 
-async function mutate<T>(
+export async function mutate<T>(
   path: string,
   method: "POST" | "PATCH",
   body?: unknown,

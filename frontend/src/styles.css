@@ -1464,3 +1464,68 @@ strong {
   display: inline-flex;
   align-items: center;
 }
+
+/* Business uses the same Fluent/NexaPay tokens; owner context stays explicit. */
+.workspace-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.workspace-switcher a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.merchant-form-card {
+  max-width: 720px;
+}
+.business-wallet {
+  max-width: 900px;
+}
+.business-balance {
+  display: block;
+  font-size: clamp(28px, 5vw, 44px);
+  margin: 16px 0;
+  overflow-wrap: anywhere;
+}
+.merchant-metadata {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) minmax(0, 2fr);
+  gap: 16px;
+}
+.merchant-metadata dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 480px) {
+  .merchant-metadata {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .merchant-metadata dd {
+    margin-bottom: 12px;
+  }
+}
+
+.business-page {
+  display: grid;
+  gap: 24px;
+  width: 100%;
+  max-width: 960px;
+}
+.business-page > .page-heading {
+  margin-bottom: 0;
+}
+.business-wallet button {
+  min-height: 44px;
+}
+@media (max-width: 480px) {
+  .business-wallet .section-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
