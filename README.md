@@ -90,7 +90,7 @@ trong [.github/workflows/ci.yml](.github/workflows/ci.yml).
 
 Từ root, `node infra/runtime-smoke.mjs` tự khởi động/dừng JAR ở cổng 18081 để
 kiểm tra SPA/API routing, session mất hiệu lực sau restart, kết quả P2P/lookup/
-replay/history cùng merchant/wallet/membership vẫn còn và cookie
+replay/history cùng merchant/wallet/membership và payment capture/lookup/replay vẫn còn và cookie
 Secure mặc định. Cần `.env`, database đang chạy và JAR đã bundle SPA. Script tạo
 tài khoản giả riêng; không reset database. Có thể đổi `SMOKE_PORT` nếu cần.
 Nếu app chạy ở cổng khác, đặt `E2E_BASE_URL` tương ứng trước khi chạy E2E.
@@ -139,7 +139,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Reconciliation failed; investigate reported ID
 ```
 
 Linux: `docker compose --env-file .env -f infra/compose.yaml exec -T db psql -U nexapay_app -d nexapay < infra/reconcile.sql`.
-Hiện kiểm tra journal/projection/funding/transfer/command/quota/issuance.
+Hiện kiểm tra journal/projection/funding/transfer/payment/command/quota/issuance và merchant/request/attempt linkage.
 Không xoá volume hay sửa balance để làm report xanh.
 
 ## Tài liệu
@@ -201,6 +201,33 @@ reset volume. Runtime vẫn không được sửa posted_balance trực tiếp; 
 cùng nonnegative/max balance guard với PERSONAL. Reconciliation bổ sung kiểm
 merchant ownership/account type và giữ toàn bộ checks funding/P2P/quota/issuance.
 
-Payment requests/checkout/refund tiếp tục ở P1a-02/03; P1a-01 chỉ bàn giao
+P1a-01 bàn giao
 onboarding/profile/wallet. Xem [plan/evidence](<Implementation Plan/P1a-01-merchant-wallet.md>),
 [OpenAPI](Docs/api/p1a-01.openapi.yaml) và [UI states](Docs/ui/P1a-01-merchant-wireframes.md).
+
+
+## Payment Request & Checkout — P1a-02
+
+Doanh nghiệp → “Yêu cầu thanh toán” → “Tạo yêu cầu”: nhập số tiền 1..100.000.000
+VND, mô tả và thời hạn 5 phút..24 giờ (mặc định30 phút). Detail cung cấp URL cùng
+origin và QR; chỉ yêu cầu PENDING có thể hủy qua bước xác nhận. Metadata immutable,
+muốn đổi nội dung phải tạo yêu cầu mới. Mất phản hồi tạo request thì tra cứu key
+đã lưu; không tự tạo lại sau reload.
+
+Người trả mở link `/pay/:ref`, xem merchant/amount/expiry trước đăng nhập. Đăng
+nhập trở lại đúng checkout, xem số dư cá nhân, review rồi mới xác nhận trả tiền.
+Mỗi request tối đa một capture; thiếu tiền/locked/self-payment là FAILED attempt
+đã lưu, không biến request thành FAILED. Intent mới chỉ bắt đầu sau kết quả
+terminal. Timeout/re-auth/reload dùng command lookup trước, không auto POST.
+
+Payment ghi hai ledger legs personal→merchant, request PAID, attempt/payment,
+command result và audit trong cùng transaction. Request lock và actual DB clock
+quyết định expiry, accounts lock UUID tăng dần. Public DTO không chứa payer/key/
+account metadata. Payer thấy failed/successful attempts trong lịch sử cá nhân;
+merchant chỉ thấy successful captures và số liệu thực theo ngày UTC. Throttle
+money commands dùng chung funding/P2P/PAYMENT. Refund tiếp theo ở P1a-03.
+
+V5 additive đã kiểm chứng giữ dữ liệu V4; không reset volume. Xem
+[plan/evidence](<Implementation Plan/P1a-02-payment-checkout.md>),
+[OpenAPI](Docs/api/p1a-02.openapi.yaml) và
+[UI states](Docs/ui/P1a-02-payment-wireframes.md).

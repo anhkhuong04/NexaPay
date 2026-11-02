@@ -59,10 +59,10 @@ bank không thuộc slice này. Giữ V1–V4, không seed/repair/reset tiền.
 
 ## Tasks
 
-- [ ] 1. PostgreSQL RED→GREEN cho API/schema/pay/replay/ownership/rollback, MM-09
+- [x] 1. PostgreSQL RED→GREEN cho API/schema/pay/replay/ownership/rollback, MM-09
   payment races, after-lock DB expiry và one capture; implement V5/services/history,
   request/payment read models, contract. Commit backend milestone.
-- [ ] 2. Typed UI/create/list/detail/QR/checkout/review/recovery/history/business
+- [x] 2. Typed UI/create/list/detail/QR/checkout/review/recovery/history/business
   queries. Unit behavioral regressions và connected two actors, loss/re-auth/reload,
   no pre-review POST, owner-only data; commit UI milestone.
 - [ ] 3. Full frontend format/lint/test/build/audit; backend `-Pweb clean verify`
@@ -85,7 +85,47 @@ bank không thuộc slice này. Giữ V1–V4, không seed/repair/reset tiền.
 - Metadata creation lookup: owned GET `/merchants/{id}/payment-requests/by-key/{key}`;
   404 REQUEST_NOT_OBSERVED stays unknown, reference stored without payload, memory
   draft only, same-actor re-auth preserves reference; reload lookup-only.
-- Frontend progress: **42/42** unit, 12 files; lint/strict build pass. New QR libs
+- Frontend progress: **44/44** unit, 12 files; lint/strict build pass. New QR libs
   pinned from npm metadata: qrcode 1.5.4, @types/qrcode 1.5.6, jsqr 1.4.0 (test-only
   decoder). Primary docs [encoder](https://github.com/soldair/node-qrcode),
-  [decoder](https://github.com/cozmo/jsQR). Runtime/connected gates pending.
+  [decoder](https://github.com/cozmo/jsQR). Focused checkout E2E **8/8** desktop/mobile đạt; full runtime/connected gates bên dưới.
+
+- Backend milestone commit `7a6592c`, pagination fix `a258176`; UI milestone `c4357b0`. Full clean packaged build final:
+  `./backend/mvnw.cmd -f backend/pom.xml -B -ntp -Pweb spotless:apply clean verify`,
+  **74/74**, 0 failures/errors/skips, BUILD SUCCESS 2m38s. Cursor quá miền timestamp
+  được reject400; không để JDBC chuyển thành500. Logs `.tools/p1a02/backend-full.log`.
+- Final frontend lint/strict build/unit **44/44** đạt; focused connected **8/8**
+  1m24s (`.tools/p1a02/e2e-payment.log`). Lần đầu 6/8: hai re-auth expectations
+  đòi protected redirect trong public checkout; trace chỉ ra concurrent lookup401.
+  Đã thống nhất public login prompt, giữ exact returnTo/key, bổ sung unit và chạy
+  lại cả8 đạt. Không tăng timeout hoặc bỏ assertions.
+- UI review sửa confirmation khi refetched terminal/LOCKED, fee từ capabilities,
+  late cancel401 actor guard và pending navigation. Terminal payment sau rời
+  checkout vẫn refresh Overview cùng actor. QR decode đúng URL bằng jsQR độc lập;
+  review trước POST, keyboard confirm, loss/reload/no duplicate POST được kiểm tra.
+- V4→V5 trên volume local: snapshot giữ accounts/balances/wallets/merchants/
+  memberships/journal/audit counts; `.tools/p1a02/upgrade-before.json`,
+  `upgrade-after.json`, `upgrade-result.log`. Không seed, repair hoặc reset.
+
+- Self-review thực hiện inline trên transaction/lock order, V5 deferred guards,
+  runtime grants, privacy DTO/history, actor/epoch recovery và React hooks/cache.
+  Không có independent reviewer sign-off. Bổ sung min44px cho controls/links của
+  payment screens, checkout320px/desktop CSS zoom200% trong connected regression.
+  Ảnh desktop/mobile/share/review đã kiểm tra; không coi axe/zoom là chứng nhận.
+
+## Giới hạn và handoff
+
+Simulated VND, một instance, session memory; chưa deploy public hoặc benchmark.
+Sau reload payload không được giữ để resend, chỉ lookup theo reference; đây là
+recovery policy đã chốt. Không có refund/webhook/Console/mock-bank ở slice này.
+**MM-09 phần payment** được kiểm tra; **MM-09 đầy đủ và P1a tổng thể còn pending**
+vì concurrent partial refunds thuộc **P1a-03 — Full/Partial Refund**. Slice tiếp
+khóa payment→accounts, giới hạn tổng hoàn, thiếu tiền merchant, replay FAILED và
+payer LOCKED vẫn nhận nghĩa vụ refund theo baseline; không thay original PAID.
+
+- Local full connected regression **36/36**, 3m48s, sau login-prompt fix và thêm
+  checkout320px/zoom200/cancel44px assertions. Minor final control/link sizing
+  polish đã strict build; final-image regression/runtime đang chạy. Frontend
+  format/lint PASS, npm audit0; OpenAPI **197 refs** resolve, Markdown **67 links**
+  đúng case/fences. Packaged SPA **8 files** byte-identical; repackage sau CSS-only
+  polish không rerun Java tests đã pass74, không che failure/skips trong full gate.

@@ -277,6 +277,10 @@ P1a-01 là increment onboarding/profile/wallet: chỉ hiển thị số dư ví 
 merchant metadata. KPI payments/refunds/requests và CTA dưới đây được mở ở slice
 payment/refund khi có API tương ứng; không render số liệu/control giả. Onboarding
 và settings states xem [P1a-01 merchant](ui/P1a-01-merchant-wireframes.md).
+P1a-02 bổ sung successful payments today/received today theo ngày UTC, pending
+requests còn hiệu lực và recent captures từ API thật. Routes, QR, create recovery
+và checkout xem [P1a-02 states](ui/P1a-02-payment-wireframes.md). Refund KPI/status/CTA
+thuộc P1a-03, chưa render trong increment P1a-02.
 
 - KPI cards: current merchant wallet balance, successful payments today, pending requests, refunds (data nghĩa được ghi rõ, không tự gộp gross revenue với balance).
 - Chart trends optional, không thay thế list recent payments.

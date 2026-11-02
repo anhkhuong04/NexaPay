@@ -58,7 +58,7 @@ Không catch SQL error rồi tiếp tục dùng transaction PostgreSQL đã abor
 
 ### 3.3 Result lookup và frontend recovery
 
-P0 endpoint baseline (OpenAPI đầy đủ sẽ được viết trước slice tương ứng):
+Endpoints đã triển khai P0 và P1a-02 (xem OpenAPI trong [chỉ mục](README.md)):
 
 | Method/path | Contract |
 |---|---|
@@ -66,11 +66,13 @@ P0 endpoint baseline (OpenAPI đầy đủ sẽ được viết trước slice t
 | POST `/api/v1/demo-fundings` | Body `{amount:"100000", currency:"VND"}`; cùng key/result protocol; quota từ server |
 | GET `/api/v1/commands/{operationType}/{key}` | Authenticated actor scope; 200 terminal result (gồm originalHttpStatus, resourceId, status, result/error); 404 `COMMAND_NOT_OBSERVED` nếu chưa thấy committed record |
 | GET `/api/v1/commands` | Actor-scoped recent committed commands, cursor paging default 20/max 100, sort createdAt/id giảm dần; hỗ trợ recovery khi mở tab mới |
+| POST `/api/v1/checkout/{opaqueRef}/pay` | Session personal + CSRF, body `{amount,currency}`, UUID key; PAYMENT resourceId là attempt ID; SUCCEEDED result thêm paymentId/ledgerTransactionId/requestRef; ledger operationId là paymentId |
+| GET `/api/v1/checkout/{opaqueRef}` | Public DTO tối thiểu: merchant snapshot, amount/currency/description/status/createdAt/expiresAt; không payer, key hoặc account metadata |
 | GET `/api/v1/transfers/{id}` | Initiator hoặc recipient của transfer thành công; failed record chỉ initiator/operator được phép; unrelated resource trả 404 |
 
 `COMMAND_NOT_OBSERVED` **không chứng minh thất bại**: transaction đầu có thể còn chạy hoặc chưa đến server. UI tiếp tục retry đúng POST/key/payload khi user chọn kiểm tra/thử lại; không tạo key mới khi chưa biết kết quả. GET lookup không tạo command. Không trả 202 durable acceptance cho P0 đồng bộ.
 
-Client lưu recovery reference `{environmentEpoch, actorId, operationType, key}` trong sessionStorage trước POST. Không lưu password/token/note/full recipient data ở storage này. Trong cùng tab vẫn giữ draft trong memory để retry payload gốc; sau reload chỉ lookup theo reference, không tự POST. Có mục xem recent commands theo actor (paginated) ở API/session recovery để tìm command đã commit khi tab cũ bị đóng; nếu chưa có committed record, không có bằng chứng thành công/thất bại, UI giải thích và cho lookup lại. Không giả hứa recover một intent chưa commit nếu reference đã mất.
+Client lưu recovery reference `{environmentEpoch, actorId, operationType, key, checkoutRef?}` (PAYMENT bắt buộc checkoutRef opaque để quay lại đúng checkout) trong sessionStorage trước POST. Không lưu password/token/note/full recipient data ở storage này. Trong cùng tab vẫn giữ draft trong memory để retry payload gốc; sau reload chỉ lookup theo reference, không tự POST. Có mục xem recent commands theo actor (paginated) ở API/session recovery để tìm command đã commit khi tab cũ bị đóng; nếu chưa có committed record, không có bằng chứng thành công/thất bại, UI giải thích và cho lookup lại. Không giả hứa recover một intent chưa commit nếu reference đã mất.
 
 Khi có terminal business failure, key đó kết thúc; user bấm sửa/bắt đầu giao dịch mới sau khi nhìn thấy lỗi mới tạo key mới. Khi 401/CSRF hết hạn: re-auth cùng user, refresh CSRF và lookup trước; không auto POST. Logout xóa account cache/draft/storage reference, nhưng recent commands server vẫn thuộc actor cũ. Đổi workspace không đổi actor nhưng source context/resource phải thuộc fingerprint và query key.
 
@@ -94,7 +96,8 @@ Mọi money use-case theo thứ tự: claim idempotency/unique provider event �
 
 ## 5. Payment và refund (P1a)
 
-- `PaymentRequest`: immutable merchant/amount/currency/expiry; `PENDING → PAID | EXPIRED | CANCELLED`.
+- `PaymentRequest`: immutable merchant/amount/currency/expiry; `PENDING → PAID | EXPIRED | CANCELLED`. P1a-02 tạo metadata bằng key UUID riêng, unique `(merchant_id, creation_key)`; cùng canonical fingerprint trả resource đã tạo, khác payload 409. Lookup owned theo key trả 404 `REQUEST_NOT_OBSERVED` khi chưa quan sát được, không tự tạo lại. Reference `{actorId, merchantId, environmentEpoch, key}` giữ trong sessionStorage, draft chỉ memory; reload chỉ lookup.
+- V5 hiện thực expiry lazy tại pay/cancel/public detail/owned detail/list dưới request lock với actual DB clock; không cần scheduler để chặn trả tiền sau hạn. Name/description snapshot được giữ nguyên. Tham khảo [OpenAPI](api/p1a-02.openapi.yaml) và [payment states](ui/P1a-02-payment-wireframes.md).
 - Có nhiều `PaymentAttempt` cho request, mỗi attempt thuộc một actor/key và terminal SUCCEEDED/FAILED. Một request có tối đa một `Payment` thành công, enforce UNIQUE(payment_request_id). Lần thử thiếu tiền không biến request thành FAILED; payer có thể tạo intent mới.
 - Pay/cancel/expire lock request row trước account. Lấy actual database clock sau khi có request lock để quyết định `now < expiresAt` (không dựa vào thời điểm bắt đầu transaction). Pay đã được chấp nhận dưới lock trước expiry có thể commit sau expiry; scheduler không override PAID. Các luồng dùng cùng ranh giới này.
 - Merchant owner không thanh toán request của chính merchant bằng ví cá nhân; không cho P2P tùy ý vào/ra merchant wallet P1a. Merchant chỉ nhận payment và trả refund; withdrawal merchant ngoài scope.
