@@ -137,7 +137,26 @@ test("real signup, sign-in, wallet, profile, refresh and logout", async ({
   await expect(
     page.getByRole("heading", { name: "Chào An NexaPay." }),
   ).toBeVisible();
+  // Hold the CSRF preflight to expose navigation that aborts an unfinished logout.
+  let releaseLogout!: () => void;
+  let logoutStarted!: () => void;
+  const logoutGate = new Promise<void>((r) => (releaseLogout = r));
+  const logoutRequest = new Promise<void>((r) => (logoutStarted = r));
+  await page.route("**/api/v1/auth/csrf", async (route) => {
+    logoutStarted();
+    await logoutGate;
+    await route.continue();
+  });
   await page.getByRole("button", { name: "Đăng xuất", exact: true }).click();
+  await logoutRequest;
+  await expect(
+    page.getByRole("button", { name: "Đang thoát…", exact: true }),
+  ).toBeVisible();
+  releaseLogout();
+  await expect(
+    page.getByRole("heading", { name: "Đăng nhập", exact: true }),
+  ).toBeVisible();
+  await page.unroute("**/api/v1/auth/csrf");
   await page.goto("/app/overview");
   await expect(
     page.getByRole("heading", { name: "Đăng nhập", exact: true }),

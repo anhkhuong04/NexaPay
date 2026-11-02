@@ -161,7 +161,9 @@ test("P2P review and receipt, owned outgoing/incoming history, filters and detai
   await page.goto("/app/overview");
   await expect(page.getByTestId("wallet-balance")).toHaveText("90.000 ₫");
   await page.getByRole("button", { name: "Đăng xuất", exact: true }).click();
-  await page.goto("/auth/sign-in");
+  await expect(
+    page.getByRole("heading", { name: "Đăng nhập", exact: true }),
+  ).toBeVisible();
   await page.getByLabel(/^Email/).fill(recipient.email);
   await page.getByLabel(/^Mật khẩu/).fill(recipient.password);
   await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();

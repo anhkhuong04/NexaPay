@@ -115,7 +115,7 @@ MM-01–08; [UI spec](../Docs/NexaPay_UIUX_DESIGN_SPEC_v0.1.md) UI-05–07;
 - Fresh whole-change review: 0 critical, 2 important. Re-auth mất draft và response
   sau unmount không invalidate views đều đã tái hiện bằng RED (unit + real browser).
   Fix pass: module memory intent qua same-actor re-auth (không persist payload),
-  central actor-guarded terminal invalidation. GREEN evidence đang chạy.
+  central actor-guarded terminal invalidation. GREEN evidence ghi ở mục tiếp theo.
 - E2E harness đầu tiên điều hướng trước khi login kết thúc làm abort login;
   đã sửa chờ URL sau login. Không thay auth để né test. Input amount error cần
   hiển thị hướng dẫn parser thay generic API message; real browser RED tái hiện.
@@ -174,3 +174,14 @@ an uncommitted command cannot be recovered from server history. These are baseli
 limits, not FAILED financial results. P1a/P1b/P1c remain outside this slice.
 No performance/throughput or accessibility certification claim; measured scenarios
 and automated axe/keyboard/reflow checks above do not substitute for every device.
+
+- Hosted attempt [41396306442](https://github.com/anhkhuong04/NexaPay/actions/runs/41396306442):
+  frontend/backend/runtime PASS, E2E 13/16; 3 failure tại logout/navigation.
+  Root cause tái hiện local bằng giữ CSRF preflight pending: test điều hướng trước
+  logout hoàn tất nên abort request, session vẫn hợp lệ. RED controlled test đã
+  fail đúng chỗ; fix chờ UI sign-in trước protected-route probe/account switch,
+  giữ assertion “Đang thoát…” khi preflight pending. Không đổi app auth hoặc
+  tăng timeout/retry/skip. Focused desktop/mobile regression **4/4**, 27s, lint pass
+  (`.tools/p003/logout-fix.log`). Hosted CI chạy lại ở commit sửa harness.
+- OpenAPI amount pattern được siết đúng 1..100000000 như server (không chỉ mô tả
+  upper bound bằng prose); không thay limit đã chốt.
