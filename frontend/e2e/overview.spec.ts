@@ -45,6 +45,14 @@ const recent = (page: Page) =>
 const actions = (page: Page) =>
   page.getByRole("region", { name: "Thao tác ví" });
 async function scan(page: Page) {
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
+        .map((a) => a.finished.catch(() => {})),
+    ),
+  );
   expect(
     (
       await new AxeBuilder({ page })
@@ -53,10 +61,21 @@ async function scan(page: Page) {
     ).violations,
   ).toEqual([]);
 }
-async function review(page: Page, destination: string, amount = "10000") {
+async function review(
+  page: Page,
+  destination: string,
+  amount = "10000",
+  startNew = false,
+) {
   await actions(page)
     .getByRole("button", { name: "Chuyển tiền", exact: true })
     .click();
+  if (startNew) {
+    // A terminal funding result remains recoverable until the user starts a new intent.
+    await page
+      .getByRole("button", { name: "Bắt đầu chuyển mới", exact: true })
+      .click();
+  }
   await page.getByLabel(/^Mã ví người nhận/).fill(destination);
   await page
     .getByRole("button", { name: "Tra cứu người nhận", exact: true })
@@ -100,7 +119,7 @@ test("overview shows real funding/P2P, newest five, rejected intent and actor-ow
   await expect(
     recent(page).getByText("+100.000 ₫", { exact: true }),
   ).toBeVisible();
-  await review(page, b.wallet.id);
+  await review(page, b.wallet.id, "10000", true);
   const committed = page.waitForResponse(
     (r) =>
       r.request().method() === "POST" && r.url().endsWith("/api/v1/transfers"),
@@ -187,6 +206,27 @@ test("overview shows real funding/P2P, newest five, rejected intent and actor-ow
     path: `test-results/${info.project.name}-overview-recent.png`,
     fullPage: true,
   });
+  if (info.project.name === "desktop") {
+    // Chromium CSS zoom smoke: enlarge text and controls together, then check reflow.
+    await page.evaluate(() => {
+      document.documentElement.style.zoom = "2";
+    });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await expect(
+      actions(page).getByRole("button", { name: "Chuyển tiền", exact: true }),
+    ).toBeEnabled();
+    await page.screenshot({
+      path: "test-results/desktop-overview-zoom200.png",
+      fullPage: true,
+    });
+    await page.evaluate(() => {
+      document.documentElement.style.zoom = "";
+    });
+  }
   await page.setViewportSize({ width: 320, height: 900 });
   expect(
     await page.evaluate(

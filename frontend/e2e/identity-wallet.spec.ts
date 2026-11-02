@@ -46,6 +46,21 @@ test("real signup, sign-in, wallet, profile, refresh and logout", async ({
   expect(session?.sameSite).toBe("Lax");
   await page.reload();
   await expect(page.getByTestId("wallet-balance")).toHaveText("0 ₫");
+  await expect(
+    page
+      .getByRole("region", { name: "Thao tác ví" })
+      .getByRole("button", { name: "Chuyển tiền", exact: true }),
+  ).toBeEnabled();
+  // Fluent colors transition for 100ms when wallet data enables the actions.
+  // Measure settled contrast, without disabling animations or axe rules.
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
+        .map((a) => a.finished.catch(() => {})),
+    ),
+  );
   expect(
     (
       await new AxeBuilder({ page })
