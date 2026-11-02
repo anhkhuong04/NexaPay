@@ -32,6 +32,7 @@ import { Brand, FetchError, Loading, Notice, WalletPanel } from "./components";
 import { replaceActor, safeReturnTo, sessionOptions } from "./session";
 import { displayName, loginSchema, registerSchema } from "./validation";
 import { FundingPage, CommandsPage } from "./FundingPages";
+import { SendPage, HistoryPage, TransactionPage } from "./TransferPages";
 
 function RouteFocus() {
   const { pathname } = useLocation();
@@ -449,6 +450,14 @@ function AppShell({ session }: { session: Session }) {
             <Home24Regular aria-hidden />
             Tổng quan
           </NavLink>
+          <NavLink to="/app/send">
+            <ArrowRight24Regular aria-hidden />
+            Chuyển tiền
+          </NavLink>
+          <NavLink to="/app/transactions">
+            <ArrowClockwise24Regular aria-hidden />
+            Lịch sử giao dịch
+          </NavLink>
           <NavLink to="/app/profile">
             <Person24Regular aria-hidden />
             Hồ sơ của tôi
@@ -612,6 +621,9 @@ function Overview() {
         )}
       </section>
       <p>
+        <Link to="/app/send" className="button-link">
+          Chuyển tiền
+        </Link>{" "}
         <Link to="/app/add-demo-funds" className="button-link">
           Nhận tiền demo
         </Link>
@@ -772,6 +784,9 @@ export function App() {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="add-demo-funds" element={<FundingPage />} />
           <Route path="commands" element={<CommandsPage />} />
+          <Route path="send" element={<SendPage />} />
+          <Route path="transactions" element={<HistoryPage />} />
+          <Route path="transactions/:type/:id" element={<TransactionPage />} />
         </Route>
         <Route
           path="*"

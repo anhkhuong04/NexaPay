@@ -1,5 +1,6 @@
 import { QueryCache, QueryClient, queryOptions } from "@tanstack/react-query";
 import { api, ApiError, type Session } from "./api";
+import { retainActorDraft } from "./moneyDrafts";
 import { RECOVERY_KEY } from "./funding";
 
 export function makeQueryClient() {
@@ -37,6 +38,7 @@ export async function replaceActor(
   client: QueryClient,
   session: Session | null,
 ) {
+  retainActorDraft(session?.userId ?? null);
   let recovery: string | null = null;
   try {
     const value = sessionStorage.getItem(RECOVERY_KEY);
@@ -54,7 +56,13 @@ export async function replaceActor(
 }
 export function safeReturnTo(value: unknown) {
   return typeof value === "string" &&
-    ["/app/profile", "/app/add-demo-funds", "/app/commands"].includes(value)
+    [
+      "/app/profile",
+      "/app/add-demo-funds",
+      "/app/commands",
+      "/app/send",
+      "/app/transactions",
+    ].includes(value)
     ? value
     : "/app/overview";
 }

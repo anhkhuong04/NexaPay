@@ -172,9 +172,25 @@ test("response loss recovers by lookup, reauthentication never automatically res
   expect(posts).toBe(2);
   await expect(
     page.getByRole("button", { name: "Thử lại cùng mã" }),
-  ).toHaveCount(0);
+  ).toBeVisible();
   const wallet = await (await page.request.get("/api/v1/wallets/me")).json();
   expect(wallet.availableBalance).toBe("100000");
   const commands = await (await page.request.get("/api/v1/commands")).json();
   expect(commands.items).toHaveLength(1);
+  const ref = await page.evaluate(() =>
+    JSON.parse(sessionStorage.getItem("nexapay.money-recovery")!),
+  );
+  const retry = page.waitForRequest(
+    (r) => r.method() === "POST" && r.url().endsWith("/api/v1/demo-fundings"),
+  );
+  await page.getByRole("button", { name: "Thử lại cùng mã" }).click();
+  expect((await retry).headers()["idempotency-key"]).toBe(ref.key);
+  await expect(
+    page.getByRole("heading", { name: "Đã nhận tiền demo", exact: true }),
+  ).toBeVisible();
+  expect(posts).toBe(3);
+  expect(
+    (await (await page.request.get("/api/v1/wallets/me")).json())
+      .availableBalance,
+  ).toBe("200000");
 });

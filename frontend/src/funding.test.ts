@@ -98,3 +98,78 @@ it("accepts committed 422 as terminal and preserves POST key/body without automa
   expect(fetch.mock.calls[1][1].headers["Idempotency-Key"]).toBe(key);
   expect(fetch.mock.calls[1][1].body).toBe(JSON.stringify(body));
 });
+
+it("preserves a TRANSFER reference when navigating through funding and isolates its cache", async () => {
+  const client = makeQueryClient();
+  const session = {
+    userId: "A",
+    roles: ["INDIVIDUAL"],
+    authenticatedAt: "",
+    absoluteExpiresAt: "",
+  };
+  await replaceActor(client, session);
+  const ref = {
+    actorId: "A",
+    environmentEpoch: "epoch",
+    operationType: "TRANSFER" as const,
+    key,
+  };
+  saveRecovery(ref);
+  expect(readRecovery("A", "epoch")).toEqual(ref);
+  const result: CommandResult = {
+    key,
+    operationType: "TRANSFER",
+    resourceId: key,
+    status: "SUCCEEDED",
+    originalHttpStatus: 201,
+    createdAt: "2026-01-01T00:00:00Z",
+    result: { amount: "10000", currency: "VND" },
+    error: {},
+  };
+  expect(cacheTerminal(client, "A", result)).toBe(true);
+  expect(client.getQueryData(["command", "A", "TRANSFER", key])).toEqual(
+    result,
+  );
+  expect(
+    client.getQueryData(["command", "A", "DEMO_FUNDING", key]),
+  ).toBeUndefined();
+  await replaceActor(client, null);
+  expect(cacheTerminal(client, "A", result)).toBe(false);
+  client.clear();
+});
+
+it("invalidates actor money views when a terminal response finishes after page navigation", async () => {
+  const client = makeQueryClient();
+  await replaceActor(client, {
+    userId: "A",
+    roles: ["INDIVIDUAL"],
+    authenticatedAt: "",
+    absoluteExpiresAt: "",
+  });
+  client.setQueryData(["wallet", "A", "personal"], {
+    availableBalance: "100000",
+  });
+  client.setQueryData(["history", "A", {}], { items: [] });
+  client.setQueryData(["wallet", "B", "personal"], {
+    availableBalance: "200000",
+  });
+  const result: CommandResult = {
+    key,
+    operationType: "TRANSFER",
+    resourceId: key,
+    status: "SUCCEEDED",
+    originalHttpStatus: 201,
+    createdAt: "2026-01-01T00:00:00Z",
+    result: { amount: "10000", currency: "VND" },
+    error: {},
+  };
+  cacheTerminal(client, "A", result);
+  expect(client.getQueryState(["wallet", "A", "personal"])?.isInvalidated).toBe(
+    true,
+  );
+  expect(client.getQueryState(["history", "A", {}])?.isInvalidated).toBe(true);
+  expect(client.getQueryState(["wallet", "B", "personal"])?.isInvalidated).toBe(
+    false,
+  );
+  client.clear();
+});

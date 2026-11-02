@@ -12,6 +12,7 @@
   --mint: #5fe0c2;
   --muted: #526b70;
   --border: #d8e4e1;
+  --danger: #913a32;
 }
 * {
   box-sizing: border-box;
@@ -1207,5 +1208,150 @@ strong {
   .command-row {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+.send-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+  margin-bottom: 24px;
+}
+.send-form,
+.send-summary {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.send-form .account-form {
+  max-width: none;
+}
+.send-form h2,
+.send-summary h2 {
+  font-size: 21px;
+  margin-top: 0;
+}
+.send-summary code {
+  display: block;
+  margin-top: 20px;
+  font-size: 12px;
+}
+.send-summary p {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+.summary-amount {
+  display: block;
+  font-size: 32px;
+  color: var(--teal);
+}
+.money-input input {
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+}
+.transfer-review dl {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 16px;
+}
+.transfer-review dt {
+  color: var(--muted);
+}
+.transfer-review dd {
+  margin: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.send-form button,
+.history-filters button,
+.history-list button {
+  min-height: 44px;
+}
+.history-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.history-filters > div {
+  flex: 1;
+  min-width: 160px;
+}
+.history-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding-block: 24px;
+  border-bottom: 1px solid var(--border);
+}
+.history-row:last-child {
+  border-bottom: 0;
+}
+.history-row > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.history-row h2 {
+  font-size: 17px;
+  margin: 0;
+}
+.history-row p {
+  font-size: 14px;
+  margin-block: 8px;
+}
+.history-row code {
+  font-size: 12px;
+}
+.history-row > div:last-child {
+  text-align: right;
+  flex-shrink: 0;
+}
+.history-amount {
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+}
+.transaction-status {
+  color: var(--teal);
+  font-weight: 600;
+}
+.transaction-status.rejected {
+  color: var(--danger);
+}
+.history-row a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+@media (max-width: 900px) {
+  .send-layout {
+    grid-template-columns: 1fr;
+  }
+  .send-summary {
+    order: -1;
+  }
+}
+@media (max-width: 480px) {
+  .transfer-review dl {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .transfer-review dd {
+    text-align: left;
+    margin-bottom: 12px;
+  }
+  .history-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .history-row > div:last-child {
+    text-align: left;
+  }
+  .history-filters > div {
+    min-width: 100%;
+  }
+  .summary-amount {
+    font-size: 28px;
   }
 }

@@ -12,7 +12,10 @@ public class SpaController {
     "/app/overview",
     "/app/profile",
     "/app/add-demo-funds",
-    "/app/commands"
+    "/app/commands",
+    "/app/send",
+    "/app/transactions",
+    "/app/transactions/{type}/{id}"
   })
   String shell() {
     return "forward:/index.html";

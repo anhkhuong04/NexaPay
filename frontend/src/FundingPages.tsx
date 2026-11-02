@@ -12,6 +12,7 @@ import { FetchError, Loading, Notice } from "./components";
 import {
   fundingApi,
   cacheTerminal,
+  refreshMoneyViews,
   readRecovery,
   saveRecovery,
   RECOVERY_KEY,
@@ -19,6 +20,11 @@ import {
   type FundingCapabilities,
   type FundingInput,
 } from "./funding";
+import {
+  rememberIntent,
+  readMemoryIntent,
+  clearMemoryIntent,
+} from "./moneyDrafts";
 import { formatMoney } from "./validation";
 
 export function Receipt({ result }: { result: CommandResult }) {
@@ -26,22 +32,55 @@ export function Receipt({ result }: { result: CommandResult }) {
     <section className="card funding-receipt" aria-label="Kết quả thao tác">
       <h2>
         {result.status === "SUCCEEDED"
-          ? "Đã nhận tiền demo"
+          ? result.operationType === "TRANSFER"
+            ? "Đã chuyển tiền"
+            : "Đã nhận tiền demo"
           : "Thao tác bị từ chối"}
       </h2>
       <Notice error={result.status === "FAILED"}>
         {result.status === "SUCCEEDED"
-          ? `${formatMoney(result.result.amount!)} đã được ghi có vào ví của bạn.`
+          ? result.operationType === "TRANSFER"
+            ? `Đã chuyển ${formatMoney(result.result.amount!)} đến ${result.result.recipientName}.`
+            : `${formatMoney(result.result.amount!)} đã được ghi có vào ví của bạn.`
           : result.error.message}
       </Notice>
       <dl>
+        {result.operationType === "TRANSFER" && (
+          <>
+            <dt>Ví gửi</dt>
+            <dd>{result.result.sourceWalletId}</dd>
+            <dt>Người nhận</dt>
+            <dd>
+              {result.result.recipientName} ·{" "}
+              {result.result.destinationWalletId}
+            </dd>
+            <dt>Số tiền</dt>
+            <dd>{formatMoney(result.result.amount!)}</dd>
+            <dt>Phí</dt>
+            <dd>{formatMoney(result.result.fee ?? "0")}</dd>
+            <dt>Lời nhắn</dt>
+            <dd>{result.result.note || "—"}</dd>
+          </>
+        )}
         <dt>Mã giao dịch</dt>
         <dd>{result.resourceId}</dd>
         <dt>Thời gian</dt>
-        <dd>{new Date(result.createdAt).toLocaleString("vi-VN")}</dd>
+        <dd>
+          {new Date(result.createdAt).toLocaleString("vi-VN", {
+            timeZoneName: "short",
+          })}
+        </dd>
         <dt>Trạng thái</dt>
         <dd>{result.status === "SUCCEEDED" ? "Thành công" : "Bị từ chối"}</dd>
       </dl>
+      <p>
+        <Link
+          to={`/app/transactions/${result.operationType}/${result.resourceId}`}
+        >
+          Xem chi tiết
+        </Link>{" "}
+        · <Link to="/app/overview">Về ví</Link>
+      </p>
       <p>
         Kết quả này thuộc thao tác đã lưu. Số dư hiện tại được đọc riêng từ ví.
       </p>
@@ -63,16 +102,24 @@ function FundingPanel({
   const [review, setReview] = useState(false);
   const [intent, setIntent] = useState<{
     key: string;
+    operationType: CommandResult["operationType"];
     draft?: FundingInput;
   } | null>(() => {
     const saved = readRecovery(session.userId, capabilities.environmentEpoch);
-    return saved ? { key: saved.key } : null;
+    if (!saved) return null;
+    const memory = readMemoryIntent(saved);
+    return {
+      key: saved.key,
+      operationType: saved.operationType,
+      draft: memory?.operationType === "DEMO_FUNDING" ? memory.body : undefined,
+    };
   });
   const [notice, setNotice] = useState("");
   const command = useQuery({
-    queryKey: ["command", session.userId, "DEMO_FUNDING", intent?.key],
-    queryFn: ({ signal }) => fundingApi.lookup(intent!.key, signal),
-    enabled: Boolean(intent && !intent.draft),
+    queryKey: ["command", session.userId, intent?.operationType, intent?.key],
+    queryFn: ({ signal }) =>
+      fundingApi.lookup(intent!.key, signal, intent!.operationType),
+    enabled: Boolean(intent),
   });
   const mutation = useMutation({
     mutationFn: ({ key, body }: { key: string; body: FundingInput }) =>
@@ -80,11 +127,12 @@ function FundingPanel({
   });
   useEffect(() => {
     if (command.data) {
-      void Promise.all([
-        client.invalidateQueries({ queryKey: ["wallet", session.userId] }),
-        client.invalidateQueries({ queryKey: ["funding", session.userId] }),
-        client.invalidateQueries({ queryKey: ["commands", session.userId] }),
-      ]);
+      clearMemoryIntent(
+        session.userId,
+        command.data.operationType,
+        command.data.key,
+      );
+      refreshMoneyViews(client, session.userId);
     }
   }, [command.data, client, session.userId]);
   async function send(key: string, body: FundingInput) {
@@ -131,7 +179,14 @@ function FundingPanel({
       setReview(false);
       return;
     }
-    setIntent({ key, draft: body });
+    rememberIntent({
+      actorId: session.userId,
+      environmentEpoch: capabilities.environmentEpoch,
+      operationType: "DEMO_FUNDING",
+      key,
+      body,
+    });
+    setIntent({ key, operationType: "DEMO_FUNDING", draft: body });
     setReview(false);
     void send(key, body);
   }
@@ -156,8 +211,10 @@ function FundingPanel({
           <dd>{formatMoney(capabilities.environmentRemaining)}</dd>
           <dt>Đặt lại hạn mức</dt>
           <dd>
-            {new Date(capabilities.nextResetAt).toLocaleString("vi-VN")} (giờ
-            địa phương)
+            {new Date(capabilities.nextResetAt).toLocaleString("vi-VN", {
+              timeZoneName: "short",
+            })}{" "}
+            (giờ địa phương)
           </dd>
         </dl>
         {!capabilities.enabled && (
@@ -215,6 +272,9 @@ function FundingPanel({
                     >
                       Kiểm tra kết quả
                     </Button>
+                    {intent.operationType === "TRANSFER" && (
+                      <Link to="/app/send">Tiếp tục chuyển tiền</Link>
+                    )}
                     {intent.draft && (
                       <Button
                         onClick={() => void send(intent.key, intent.draft!)}
@@ -321,7 +381,7 @@ export function CommandsPage() {
   });
   const selectedResult = list.data?.pages
     .flatMap((page) => page.items)
-    .find((result) => result.key === selected);
+    .find((result) => `${result.operationType}:${result.key}` === selected);
   return (
     <>
       <div className="page-heading">
@@ -346,17 +406,32 @@ export function CommandsPage() {
           {list.data.pages
             .flatMap((p) => p.items)
             .map((result) => (
-              <div className="command-row" key={result.key}>
+              <div
+                className="command-row"
+                key={`${result.operationType}:${result.key}`}
+              >
                 <div>
                   <strong>
                     {result.status === "SUCCEEDED"
-                      ? "Đã nhận tiền demo"
-                      : "Cấp tiền bị từ chối"}
+                      ? result.operationType === "TRANSFER"
+                        ? "Đã chuyển tiền"
+                        : "Đã nhận tiền demo"
+                      : result.operationType === "TRANSFER"
+                        ? "Chuyển tiền bị từ chối"
+                        : "Cấp tiền bị từ chối"}
                   </strong>
-                  <p>{new Date(result.createdAt).toLocaleString("vi-VN")}</p>
+                  <p>
+                    {new Date(result.createdAt).toLocaleString("vi-VN", {
+                      timeZoneName: "short",
+                    })}
+                  </p>
                   <code>{result.resourceId}</code>
                 </div>
-                <Button onClick={() => setSelected(result.key)}>
+                <Button
+                  onClick={() =>
+                    setSelected(`${result.operationType}:${result.key}`)
+                  }
+                >
                   Xem kết quả
                 </Button>
               </div>

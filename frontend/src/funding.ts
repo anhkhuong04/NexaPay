@@ -1,4 +1,5 @@
 import { request, type Session } from "./api";
+import { clearMemoryIntent } from "./moneyDrafts";
 import type { QueryClient } from "@tanstack/react-query";
 
 export interface FundingInput {
@@ -16,7 +17,7 @@ export interface FundingCapabilities {
 }
 export interface CommandResult {
   key: string;
-  operationType: "DEMO_FUNDING";
+  operationType: "DEMO_FUNDING" | "TRANSFER";
   resourceId: string;
   status: "SUCCEEDED" | "FAILED";
   originalHttpStatus: 201 | 422;
@@ -26,6 +27,11 @@ export interface CommandResult {
     currency?: string;
     walletId?: string;
     ledgerTransactionId?: string;
+    fee?: string;
+    sourceWalletId?: string;
+    destinationWalletId?: string;
+    recipientName?: string;
+    note?: string;
   };
   error: { code?: string; message?: string };
 }
@@ -36,7 +42,7 @@ export interface CommandPage {
 export interface Recovery {
   environmentEpoch: string;
   actorId: string;
-  operationType: "DEMO_FUNDING";
+  operationType: "DEMO_FUNDING" | "TRANSFER";
   key: string;
 }
 export const RECOVERY_KEY = "nexapay.money-recovery";
@@ -47,8 +53,19 @@ export function cacheTerminal(
 ) {
   if (client.getQueryData<Session | null>(["session"])?.userId !== actorId)
     return false;
-  client.setQueryData(["command", actorId, "DEMO_FUNDING", result.key], result);
+  client.setQueryData(
+    ["command", actorId, result.operationType, result.key],
+    result,
+  );
+  clearMemoryIntent(actorId, result.operationType, result.key);
+  refreshMoneyViews(client, actorId);
   return true;
+}
+export function refreshMoneyViews(client: QueryClient, actorId: string) {
+  if (client.getQueryData<Session | null>(["session"])?.userId !== actorId)
+    return;
+  for (const domain of ["wallet", "history", "commands", "funding"])
+    void client.invalidateQueries({ queryKey: [domain, actorId] });
 }
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function readRecovery(actorId: string, epoch: string): Recovery | null {
@@ -64,7 +81,8 @@ export function readRecovery(actorId: string, epoch: string): Recovery | null {
       "environmentEpoch" in raw &&
       raw.environmentEpoch === epoch &&
       "operationType" in raw &&
-      raw.operationType === "DEMO_FUNDING" &&
+      (raw.operationType === "DEMO_FUNDING" ||
+        raw.operationType === "TRANSFER") &&
       "key" in raw &&
       typeof raw.key === "string" &&
       uuid.test(raw.key)
@@ -72,7 +90,7 @@ export function readRecovery(actorId: string, epoch: string): Recovery | null {
       return {
         actorId,
         environmentEpoch: epoch,
-        operationType: "DEMO_FUNDING",
+        operationType: raw.operationType,
         key: raw.key,
       };
   } catch {
@@ -87,8 +105,11 @@ export function saveRecovery(value: Recovery) {
 export const fundingApi = {
   capabilities: (signal?: AbortSignal) =>
     request<FundingCapabilities>("/demo-fundings/capabilities", { signal }),
-  lookup: (key: string, signal?: AbortSignal) =>
-    request<CommandResult>(`/commands/DEMO_FUNDING/${key}`, { signal }),
+  lookup: (
+    key: string,
+    signal?: AbortSignal,
+    type: CommandResult["operationType"] = "DEMO_FUNDING",
+  ) => request<CommandResult>(`/commands/${type}/${key}`, { signal }),
   recent: (cursor?: string, signal?: AbortSignal) =>
     request<CommandPage>(
       `/commands?limit=20${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`,
