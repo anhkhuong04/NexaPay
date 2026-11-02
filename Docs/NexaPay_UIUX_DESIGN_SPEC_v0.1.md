@@ -2,7 +2,7 @@
 
 **Status:** ACCEPTED behavior baseline; visual measurements cần kiểm chứng qua prototype  
 **Date:** 2026-11-01  
-**Updated:** 2026-11-02 — P1a-02 implementation references<br>
+**Updated:** 2026-11-02 — P1a-02/03 implementation references<br>
 **Based on:** [Context](NexaPay_Context.md), [PRD](NexaPay_PRD_v0.1.md), [Architecture](NexaPay_SYSTEM_ARCHITECTURE_v0.1.md), [ADR-001](adr/ADR-001-project-baseline.md), [Money Movement](NexaPay_MONEY_MOVEMENT_SPEC_v0.2.md)  
 **Product:** Responsive web; Wallet P0, Merchant/Checkout/Refund P1a, Console/notification/CSV P1b, Mock Banking P1c.
 
@@ -309,6 +309,12 @@ thuộc P1a-03, chưa render trong increment P1a-02.
 - Pending/unknown hỗ trợ check status; success receipt, expired terminal state. Failed payment attempt (thiếu tiền/locked) không biến request thành FAILED; sau terminal rejection, intent mới có thể thử lại khi request còn hợp lệ.
 
 ### UI-13 — Refunds
+
+P1a-03 triển khai routes/form/review/history/detail và live refund aggregates theo
+[refund states](ui/P1a-03-refund-wireframes.md). Mở từ paid request/received payment;
+full refund là số tiền remaining đã review, không tự tính lại amount khi retry.
+Receipt/recovery dùng REFUND command reference, cùng chính sách lookup trước sau
+re-auth/reload. Business KPI successful refunds/refunded today có cửa sổ UTC rõ ràng.
 
 - From paid payment detail: select full/partial amount, remaining refundable, note, confirm.
 - Refund history shows status, amount, IDs, timestamps and linked payment.

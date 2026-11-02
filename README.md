@@ -90,7 +90,7 @@ trong [.github/workflows/ci.yml](.github/workflows/ci.yml).
 
 Từ root, `node infra/runtime-smoke.mjs` tự khởi động/dừng JAR ở cổng 18081 để
 kiểm tra SPA/API routing, session mất hiệu lực sau restart, kết quả P2P/lookup/
-replay/history cùng merchant/wallet/membership và payment capture/lookup/replay vẫn còn và cookie
+replay/history cùng merchant/wallet/membership cùng payment/refund lookup/replay và original-payer history vẫn còn và cookie
 Secure mặc định. Cần `.env`, database đang chạy và JAR đã bundle SPA. Script tạo
 tài khoản giả riêng; không reset database. Có thể đổi `SMOKE_PORT` nếu cần.
 Nếu app chạy ở cổng khác, đặt `E2E_BASE_URL` tương ứng trước khi chạy E2E.
@@ -139,7 +139,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Reconciliation failed; investigate reported ID
 ```
 
 Linux: `docker compose --env-file .env -f infra/compose.yaml exec -T db psql -U nexapay_app -d nexapay < infra/reconcile.sql`.
-Hiện kiểm tra journal/projection/funding/transfer/payment/command/quota/issuance và merchant/request/attempt linkage.
+Hiện kiểm tra journal/projection/funding/transfer/payment/refund/command/quota/issuance và merchant/request/attempt linkage.
 Không xoá volume hay sửa balance để làm report xanh.
 
 ## Tài liệu
@@ -228,9 +228,33 @@ command result và audit trong cùng transaction. Request lock và actual DB clo
 quyết định expiry, accounts lock UUID tăng dần. Public DTO không chứa payer/key/
 account metadata. Payer thấy failed/successful attempts trong lịch sử cá nhân;
 merchant chỉ thấy successful captures và số liệu thực theo ngày UTC. Throttle
-money commands dùng chung funding/P2P/PAYMENT. Refund tiếp theo ở P1a-03.
+money commands dùng chung funding/P2P/PAYMENT/REFUND. Refund được bổ sung trong P1a-03 bên dưới.
 
 V5 additive đã kiểm chứng giữ dữ liệu V4; không reset volume. Xem
 [plan/evidence](<Implementation Plan/P1a-02-payment-checkout.md>),
 [OpenAPI](Docs/api/p1a-02.openapi.yaml) và
 [UI states](Docs/ui/P1a-02-payment-wireframes.md).
+
+
+## Full/Partial Refund — P1a-03
+
+Local verified: **85 backend / 51 frontend unit / 44 E2E**; packaged refund
+lookup/replay/history sau restart PASS. Hosted CI đang chờ, xem plan/evidence.
+
+Từ request đã thanh toán hoặc “Thanh toán đã nhận”, chọn “Hoàn tiền”. Form hiển
+thị tiền gốc/đã hoàn/còn được hoàn và payer gốc. Nhập một phần hoặc chọn “Hoàn
+toàn bộ phần còn lại”, xem lại số tiền/lý do/phí/ví nguồn rồi xác nhận. Lịch sử
+và chi tiết riêng ở `/business/refunds`; payer thấy incoming refund thành công
+trong ví cá nhân. Payment/request giữ PAID; NONE/PARTIAL/FULL được tính riêng.
+
+Merchant ACTIVE và ví nguồn không khóa, đủ tiền mới post. Payer gốc LOCKED vẫn
+được nhận refund; không đổi destination bằng client input. Payment lock→accounts
+UUID order, aggregate guard và unique command ngăn hoàn vượt gốc hoặc post lặp.
+Refund FAILED giữ nguyên khi replay; thiếu tiền không thành pending/debt. Khi
+mất phản hồi/re-auth/reload phải lookup trước; payload chỉ ở memory, reload
+lookup-only và không tự gửi POST. Không có endpoint arbitrary merchant outflow.
+
+V6 additive giữ dữ liệu V5, CLI đối soát thêm refund/original capture/command/
+reverse legs/aggregate/orphan journal. Xem [plan/evidence](<Implementation Plan/P1a-03-refunds.md>),
+[OpenAPI](Docs/api/p1a-03.openapi.yaml), [UI states](Docs/ui/P1a-03-refund-wireframes.md).
+P1b notification/webhook/Console/CSV chưa thuộc increment này.

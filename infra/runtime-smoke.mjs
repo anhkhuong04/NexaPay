@@ -91,13 +91,19 @@ try {
   const paymentKey=crypto.randomUUID();const paymentBody={amount:'5000',currency:'VND'};
   const captured=await mutate(`/api/v1/checkout/${checkout.publicRef}/pay`,paymentBody,paymentKey);assert.equal(captured.status,201);const payment=await captured.json();
   assert.equal((await (await request('/api/v1/wallets/me')).json()).availableBalance,'5000');
+  assert.equal((await mutate('/api/v1/auth/login',credentials)).status,200);
+  const refundKey=crypto.randomUUID();const refundBody={amount:'2000',currency:'VND',note:'Runtime partial refund'};
+  const refunded=await mutate(`/api/v1/merchants/${merchant.id}/payments/${payment.result.paymentId}/refunds`,refundBody,refundKey);assert.equal(refunded.status,201);const refund=await refunded.json();
+  for(const path of ['/business/refunds',`/business/refunds/${refund.resourceId}`,`/business/payments/${payment.result.paymentId}/refund`]) {const response=await request(path);assert.equal(response.status,200);assert.match(response.headers.get('content-type'),/text\/html/);}
   await stop(); await start(true);
   assert.equal((await request('/api/v1/auth/session')).status, 401);
   cookie = '';
   assert.equal((await mutate('/api/v1/auth/login', credentials)).status, 200);
   assert.deepEqual(await (await request('/api/v1/merchants/me')).json(),merchant);
-  assert.deepEqual(await (await request(`/api/v1/merchants/${merchant.id}/wallet`)).json(),{...merchantWallet,availableBalance:'5000',totalBalance:'5000'});
-  const paidRequest=await (await request(`/api/v1/merchants/${merchant.id}/payment-requests/${checkout.id}`)).json();assert.equal(paidRequest.status,'PAID');assert.equal(paidRequest.payment.id,payment.result.paymentId);
+  assert.deepEqual(await (await request(`/api/v1/merchants/${merchant.id}/wallet`)).json(),{...merchantWallet,availableBalance:'3000',totalBalance:'3000'});
+  const paidRequest=await (await request(`/api/v1/merchants/${merchant.id}/payment-requests/${checkout.id}`)).json();assert.equal(paidRequest.status,'PAID');assert.equal(paidRequest.payment.id,payment.result.paymentId);assert.equal(paidRequest.payment.refundedAmount,'2000');assert.equal(paidRequest.payment.refundStatus,'PARTIAL');
+  assert.deepEqual(await(await request(`/api/v1/commands/REFUND/${refundKey}`)).json(),refund);
+  const refundReplay=await mutate(`/api/v1/merchants/${merchant.id}/payments/${payment.result.paymentId}/refunds`,refundBody,refundKey);assert.equal(refundReplay.status,201);assert.deepEqual(await refundReplay.json(),refund);
   const session=await (await request('/api/v1/auth/session')).json();
   assert.equal(session.merchantId,merchant.id);assert.ok(session.roles.includes('MERCHANT'));assert.ok(!session.roles.includes('ADMIN'));
   const restored = await (await request('/api/v1/wallets/me')).json();
@@ -109,11 +115,13 @@ try {
   assert.equal((await mutate('/api/v1/auth/login',recipient)).status,200);
   assert.deepEqual(await (await request(`/api/v1/commands/PAYMENT/${paymentKey}`)).json(),payment);
   const paymentReplay=await mutate(`/api/v1/checkout/${checkout.publicRef}/pay`,paymentBody,paymentKey);assert.equal(paymentReplay.status,201);assert.deepEqual(await paymentReplay.json(),payment);
-  assert.equal((await (await request('/api/v1/wallets/me')).json()).availableBalance,'5000');
+  assert.equal((await (await request('/api/v1/wallets/me')).json()).availableBalance,'7000');
+  const incomingRefunds=await(await request('/api/v1/transactions?type=INCOMING')).json();assert.equal(incomingRefunds.items.filter(item=>item.operationType==='REFUND').length,1);
+  const refundDetail=await(await request(`/api/v1/transactions/REFUND/${refund.resourceId}`)).json();assert.equal(refundDetail.paymentId,payment.result.paymentId);assert.equal(refundDetail.amount,'2000');
   const payerHistory=await (await request('/api/v1/transactions?type=OUTGOING')).json();assert.equal(payerHistory.items.length,1);assert.equal(payerHistory.items[0].operationType,'PAYMENT');assert.equal(payerHistory.items[0].id,payment.resourceId);
   await stop(); cookie = ''; await start(false);
   const secure = await request('/api/v1/auth/csrf'); assert.equal(secure.status, 200);
   const header = secure.headers.getSetCookie().find(entry => entry.startsWith('JSESSIONID='));
   assert.match(header, /; Secure/i); assert.match(header, /; HttpOnly/i); assert.match(header, /SameSite=Lax/i);
-  console.log('PASS: packaged SPA/API routing, restart invalidation, persisted P2P result/replay/history, owned merchant wallet/payment capture/lookup/replay/session membership and default Secure/HttpOnly/Lax cookie');
+  console.log('PASS: packaged SPA/API routing, restart invalidation, persisted P2P result/replay/history, owned merchant payment/refund capture/lookup/replay/original-payer history/session membership and default Secure/HttpOnly/Lax cookie');
 } finally { await stop(); output.end(); }

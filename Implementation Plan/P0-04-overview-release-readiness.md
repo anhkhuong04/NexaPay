@@ -131,6 +131,10 @@ Backend `GET /api/v1/transactions` đã nhận limit 1..100 và sort createdAt/i
 
 ## 6. Roadmap sau P0-04 — P1a
 
+**Cập nhật 02/11/2026:** P1a-01/02 đã verified; P1a-03 local verified, đang chờ
+hosted gates. Trạng thái/evidence hiện tại ở [plan P1a-03](P1a-03-refunds.md);
+phần bên dưới giữ bối cảnh đề xuất tại thời điểm đóng P0.
+
 Đây là thứ tự đề xuất, chưa phải implementation/evidence. Lập plan chi tiết cho
 từng slice khi bắt đầu, không scaffold toàn bộ P1 trước.
 

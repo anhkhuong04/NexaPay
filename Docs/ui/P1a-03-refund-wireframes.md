@@ -1,6 +1,6 @@
 # P1a-03 — Refund interaction states
 
-**02/11/2026 — Implementation prototype; verification evidence trong [plan](<../../Implementation Plan/P1a-03-refunds.md>).**
+**02/11/2026 — Local verified; hosted CI pending; evidence trong [plan](<../../Implementation Plan/P1a-03-refunds.md>).**
 
 Routes: `/business/payments/:id/refund`, `/business/refunds`, `/business/refunds/:id`.
 Payment detail giữ PAID, hiển thị original/refunded/remaining và NONE/PARTIAL/FULL.

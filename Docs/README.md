@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-01  
 **Updated:** 2026-11-02  
-**Status:** Accepted design baseline; P0 Wallet MVP DoD closed và P1a-01 Merchant/Wallet VERIFIED local + GitHub Actions (60 backend, 34 frontend unit, 28 E2E). P1a-02 Payment/Checkout VERIFIED local + GitHub Actions (74 backend/44 frontend unit/36 E2E); refund P1a-03 chưa triển khai.
+**Status:** Accepted design baseline; P0 Wallet MVP DoD closed và P1a-01 Merchant/Wallet VERIFIED local + GitHub Actions (60 backend, 34 frontend unit, 28 E2E). P1a-02 Payment/Checkout VERIFIED local + GitHub Actions (74 backend/44 frontend unit/36 E2E); P1a-03 refund local verified (85 backend/51 unit/44 E2E), hosted CI pending.
 
 ## Đọc theo thứ tự
 
@@ -30,7 +30,7 @@ Tên ba file vẫn có `_v0.1` để giữ link/open tabs; nội dung hiện t�
 1. P0-01 đã có frontend/backend/Compose, pinned tooling, DDL/Flyway/OpenAPI và tests identity/wallet. Xem [README chạy ứng dụng](../README.md).
 2. P0-02 đã có funding/ledger/quota/commands/recovery và CLI đối soát funding; xem plan/evidence bên dưới.
 3. P0-03 đã verified P2P/history, MM-01–08 và UI/recovery; evidence ở plan bên dưới.
-4. P0-04 đã verified recent activity, trạng thái quick actions trên Overview và đủ 10 điều P0 DoD; [CI passed](https://github.com/anhkhuong04/NexaPay/actions/runs/41402042152). P1a-01 merchant đã verified; P1a-02 payment/checkout đã verified → P1a-03 refund. Host/public demo chỉ chọn khi biết ngân sách; không cam kết chi phí hoặc ngày release.
+4. P0-04 đã verified recent activity, trạng thái quick actions trên Overview và đủ 10 điều P0 DoD; [CI passed](https://github.com/anhkhuong04/NexaPay/actions/runs/41402042152). P1a-01 merchant đã verified; P1a-02 payment/checkout đã verified → P1a-03 refund local verified, đang chờ hosted CI. Host/public demo chỉ chọn khi biết ngân sách; không cam kết chi phí hoặc ngày release.
 
 Thông tin kế hoạch chưa có: số giờ/tuần, hạn portfolio, ngân sách hosting. Các thông tin này không cản P0 local. Không có benchmark/test/deployment claim trong baseline khi chưa có evidence thực tế.
 
@@ -44,6 +44,7 @@ Thông tin kế hoạch chưa có: số giờ/tuần, hạn portfolio, ngân sá
 | P0-04 Overview & Release Readiness | [Đánh giá tiến độ và implementation plan tiếp theo](<../Implementation Plan/P0-04-overview-release-readiness.md>) | VERIFIED — 50 backend/26 frontend unit/22 E2E; P0 DoD closed; [CI passed](https://github.com/anhkhuong04/NexaPay/actions/runs/41402042152); kèm roadmap P1a |
 | P1a-01 Merchant & Wallet | [Plan và execution evidence](<../Implementation Plan/P1a-01-merchant-wallet.md>) | VERIFIED — 60 backend/34 frontend unit/28 E2E; [CI passed](https://github.com/anhkhuong04/NexaPay/actions/runs/41408005480) |
 | P1a-02 Payment Request & Checkout | [Plan và execution evidence](<../Implementation Plan/P1a-02-payment-checkout.md>) | VERIFIED — 74 backend/44 frontend unit/36 E2E; [CI passed](https://github.com/anhkhuong04/NexaPay/actions/runs/41415594033) |
+| P1a-03 Full/Partial Refund | [Plan và execution evidence](<../Implementation Plan/P1a-03-refunds.md>) | LOCAL VERIFIED —85 backend/51 unit/44 E2E; hosted CI pending |
 
 ## Artifacts implementation
 
@@ -53,6 +54,7 @@ Thông tin kế hoạch chưa có: số giờ/tuần, hạn portfolio, ngân sá
 - [OpenAPI P0-03](api/p0-03.openapi.yaml) và [P2P/history wireframes](ui/P0-03-p2p-history-wireframes.md).
 - [OpenAPI P1a-01](api/p1a-01.openapi.yaml) và [merchant states](ui/P1a-01-merchant-wireframes.md).
 - [OpenAPI P1a-02](api/p1a-02.openapi.yaml) và [payment/checkout states](ui/P1a-02-payment-wireframes.md).
+- [OpenAPI P1a-03](api/p1a-03.openapi.yaml) và [refund states](ui/P1a-03-refund-wireframes.md).
 - [Setup và verification](../README.md): commands thật và giới hạn runtime.
 
 ## Làm việc với agent

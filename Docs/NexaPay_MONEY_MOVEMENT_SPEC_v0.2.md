@@ -2,7 +2,7 @@
 
 **Status:** ACCEPTED design baseline; chưa phải implementation/test report  
 **Date:** 2026-11-01  
-**Updated:** 2026-11-02 — P1a-02 implementation references<br>
+**Updated:** 2026-11-02 — P1a-02/03 implementation references<br>
 **Decision source:** [ADR-001](adr/ADR-001-project-baseline.md)  
 **Related:** [PRD](NexaPay_PRD_v0.1.md), [Architecture](NexaPay_SYSTEM_ARCHITECTURE_v0.1.md)
 
@@ -68,12 +68,13 @@ Endpoints đã triển khai P0 và P1a-02 (xem OpenAPI trong [chỉ mục](READM
 | GET `/api/v1/commands/{operationType}/{key}` | Authenticated actor scope; 200 terminal result (gồm originalHttpStatus, resourceId, status, result/error); 404 `COMMAND_NOT_OBSERVED` nếu chưa thấy committed record |
 | GET `/api/v1/commands` | Actor-scoped recent committed commands, cursor paging default 20/max 100, sort createdAt/id giảm dần; hỗ trợ recovery khi mở tab mới |
 | POST `/api/v1/checkout/{opaqueRef}/pay` | Session personal + CSRF, body `{amount,currency}`, UUID key; PAYMENT resourceId là attempt ID; SUCCEEDED result thêm paymentId/ledgerTransactionId/requestRef; ledger operationId là paymentId |
+| POST `/api/v1/merchants/{merchant}/payments/{payment}/refunds` | OWNER session+CSRF+UUID key, `{amount,currency,note?}`; resourceId là refund ID, result có paymentId/merchantId; destination luôn payer gốc từ capture, không nhận từ client |
 | GET `/api/v1/checkout/{opaqueRef}` | Public DTO tối thiểu: merchant snapshot, amount/currency/description/status/createdAt/expiresAt; không payer, key hoặc account metadata |
 | GET `/api/v1/transfers/{id}` | Initiator hoặc recipient của transfer thành công; failed record chỉ initiator/operator được phép; unrelated resource trả 404 |
 
 `COMMAND_NOT_OBSERVED` **không chứng minh thất bại**: transaction đầu có thể còn chạy hoặc chưa đến server. UI tiếp tục retry đúng POST/key/payload khi user chọn kiểm tra/thử lại; không tạo key mới khi chưa biết kết quả. GET lookup không tạo command. Không trả 202 durable acceptance cho P0 đồng bộ.
 
-Client lưu recovery reference `{environmentEpoch, actorId, operationType, key, checkoutRef?}` (PAYMENT bắt buộc checkoutRef opaque để quay lại đúng checkout) trong sessionStorage trước POST. Không lưu password/token/note/full recipient data ở storage này. Trong cùng tab vẫn giữ draft trong memory để retry payload gốc; sau reload chỉ lookup theo reference, không tự POST. Có mục xem recent commands theo actor (paginated) ở API/session recovery để tìm command đã commit khi tab cũ bị đóng; nếu chưa có committed record, không có bằng chứng thành công/thất bại, UI giải thích và cho lookup lại. Không giả hứa recover một intent chưa commit nếu reference đã mất.
+Client lưu recovery reference `{environmentEpoch, actorId, operationType, key, checkoutRef?, merchantId?, paymentId?}` (PAYMENT bắt buộc checkoutRef opaque, REFUND bắt buộc merchantId/paymentId để quay lại đúng resource) trong sessionStorage trước POST. Không lưu password/token/note/full recipient data ở storage này. Trong cùng tab vẫn giữ draft trong memory để retry payload gốc; sau reload chỉ lookup theo reference, không tự POST. Có mục xem recent commands theo actor (paginated) ở API/session recovery để tìm command đã commit khi tab cũ bị đóng; nếu chưa có committed record, không có bằng chứng thành công/thất bại, UI giải thích và cho lookup lại. Không giả hứa recover một intent chưa commit nếu reference đã mất.
 
 Khi có terminal business failure, key đó kết thúc; user bấm sửa/bắt đầu giao dịch mới sau khi nhìn thấy lỗi mới tạo key mới. Khi 401/CSRF hết hạn: re-auth cùng user, refresh CSRF và lookup trước; không auto POST. Logout xóa account cache/draft/storage reference, nhưng recent commands server vẫn thuộc actor cũ. Đổi workspace không đổi actor nhưng source context/resource phải thuộc fingerprint và query key.
 
@@ -103,6 +104,7 @@ Mọi money use-case theo thứ tự: claim idempotency/unique provider event �
 - Pay/cancel/expire lock request row trước account. Lấy actual database clock sau khi có request lock để quyết định `now < expiresAt` (không dựa vào thời điểm bắt đầu transaction). Pay đã được chấp nhận dưới lock trước expiry có thể commit sau expiry; scheduler không override PAID. Các luồng dùng cùng ranh giới này.
 - Merchant owner không thanh toán request của chính merchant bằng ví cá nhân; không cho P2P tùy ý vào/ra merchant wallet P1a. Merchant chỉ nhận payment và trả refund; withdrawal merchant ngoài scope.
 - Refund lock payment row và các account đúng thứ tự; amount >0, sum(SUCCEEDED refunds)+new <= original amount. Refund đồng bộ SUCCEEDED hoặc FAILED; không pending/debt. Replay FAILED thiếu số dư giữ nguyên result; merchant cần intent mới sau khi có tiền.
+- V6 hiện thực refunds append-only, command/capture/original-payer/journal linkage, exact reverse two legs và serialized deferred aggregate guard. Runtime có payment row-lock capability hẹp, không được UPDATE capture/refund/balance. Owned payment view tính refundedAmount/refundableAmount/refundStatus từ successful refunds, không lưu tổng song song. Merchant refund list gồm FAILED/SUCCEEDED; payer history chỉ có incoming SUCCEEDED, không thấy failed refund attempts. Xem [OpenAPI refund](api/p1a-03.openapi.yaml) và [refund states](ui/P1a-03-refund-wireframes.md).
 - Refund chỉ từ merchant nguồn về payer account gốc; merchant nguồn phải ACTIVE và đủ tiền, payer có thể LOCKED để nhận nghĩa vụ hoàn tiền. Original payment giữ PAID; `refundedAmount` và `refundStatus` NONE/PARTIAL/FULL là dữ liệu tổng hợp riêng. Ledger đảo chiều mới liên kết payment/refund.
 
 ## 6. Mock bank và hold (P1c)

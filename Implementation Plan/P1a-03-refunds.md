@@ -1,7 +1,7 @@
 # P1a-03 — Full/Partial Refund
 
 **Ngày:** 02/11/2026
-**Trạng thái:** IN PROGRESS; base `0e106df`, branch `feat/p1a-03-refunds`.
+**Trạng thái:** LOCAL VERIFIED; hosted CI pending; base `0e106df`, branch `feat/p1a-03-refunds`.
 
 ## Goal và baseline
 
@@ -46,10 +46,10 @@ Không có pending debt, webhook/notification/Console/mock bank hoặc real mone
   locked original payer allowed/locked merchant refused, failed replay after state
   change, audit rollback, owner privacy, guards/raw SQL/permissions/reconciliation;
   implement schema/API/read models/OpenAPI; commit backend milestone.
-- [ ] 2. Typed refund form/review/receipt/history/payment aggregates/KPI, shared
+- [x] 2. Typed refund form/review/receipt/history/payment aggregates/KPI, shared
   recovery và cross-screen isolation; behavioral unit và two-actor E2E with real DB,
   loss/reload/reauth/late navigation, keyboard/axe/320px/zoom; commit UI milestone.
-- [ ] 3. Full format/lint/unit/strict build/audit, backend PostgreSQL clean verify,
+- [x] 3. Full format/lint/unit/strict build/audit, backend PostgreSQL clean verify,
   packaged smoke restart/refund replay, V5→V6 preservation, Compose giữ volume,
   desktop/mobile regression và read-only reconcile0.
 - [ ] 4. Inline review actual diff/invariants; sync docs/contracts/index/evidence,
@@ -73,3 +73,82 @@ Không có pending debt, webhook/notification/Console/mock bank hoặc real mone
 - Shared OpenAPI command schema trước đây còn const DEMO_FUNDING dù payment
   reference dùng schema đó; sửa thành generic operation enum khớp API đã có.
   V6 additive chưa apply volume local, chưa đánh dấu full/runtime/UI gates đạt.
+
+- Backend full clean packaged gate: **85/85**, 0 failures/errors/skips, BUILD
+  SUCCESS3m22s, `./backend/mvnw.cmd -f backend/pom.xml -B -ntp -Pweb spotless:apply clean verify`.
+  Final raw test fixture dùng cùng command key trong claim/terminal payload.
+- Frontend **51/51** unit, 13 files; format/lint/strict build PASS, npm audit0.
+  Seven new behavioral tests: no pre-review POST, over-remaining validation,
+  unknown/manual same-key retry, refetched remaining disables open review, late
+  actor isolation, strict resource recovery/reauth/logout và cross-payment intent.
+- Focused connected **8/8**, 1m00s (`.tools/p1a03/e2e-refund.log`): partial→full,
+  PAID unchanged, correct payer incoming history, gross received/refunded UTC
+  summary, response loss/funding/reload, re-auth/no autoPOST, late Overview refresh.
+  Desktop/mobile axe, keyboard confirm,320px/CSS zoom200% PASS; visual review dùng
+  ui-ux-pro-max/React checklist, giữ Fluent v9/tokens. Final status copy Việt hóa;
+  đã build lại, không đổi financial behavior. Full regression/runtime pending.
+- V5→V6 trên volume local PASS:13 bảng financial/ownership/audit có cùng count và
+  full-row digest trước/sau migration. `.tools/p1a03/upgrade-before.json`,
+  `upgrade-after.json`, `upgrade-result.log`; không seed/repair/reset dữ liệu.
+- Backend milestone `351a790`; UI milestone riêng. V6 đã apply local, từ đây mọi
+  thay đổi schema phải additive migration mới, không rewrite V6.
+
+- Resume sau gián đoạn: giữ commits `351a790` backend, `0749d4d` UI và mọi local
+  thay đổi còn lại. Full E2E trước interruption **43/44**: assertion heading ở
+  history chuyển sang detail có hai matching headings trong frame trước route
+  commit. Error-context/trace cho thấy detail sau đó đã đúng. Bổ sung explicit
+  destination URL và h1 detail wait trước h2, không `.first()` trên assertion hoặc
+  tăng timeout. Runtime refund restart PASS; security-focused1/1 PASS sau bổ sung
+  currency/destination-injection/missing capture assertions. Chưa mark VERIFIED.
+- Ruling: tiếp tục plan/branch hiện có, evidence trong `.tools/p1a03` và plan này
+  là ledger của slice; không tạo backlog cạnh tranh hoặc chạy lại các task đã có
+  commit. Một fresh-context whole-branch reviewer được dispatch theo skill mới
+  requesting-code-review; review không cho phép sửa V6 đã apply hoặc đổi scope.
+
+- Fresh-context whole-branch static review (`refund_final_review`): không thấy
+  finding blocking về correctness/security/recovery. Reviewer không sửa file hay
+  chạy suites; evidence runtime/tests do phiên chính xác nhận riêng. Review scope
+  gồm V6 permissions/aggregate/reverse legs, lock order/terminal replay/rollback,
+  privacy read models và actor/resource/cross-operation recovery.
+
+## P1a acceptance mapping
+
+| Gate PRD / MM-09 / UI-S4 | Evidence cần đóng |
+|---|---|
+| Merchant onboarding và ví0, OWNER isolation | P1a-01 evidence + full MerchantIntegration/E2E regression |
+| Link/QR, review, một capture/request | P1a-02 evidence + PaymentIntegration và QR decoder E2E regression |
+| Failed attempt không khóa request | PaymentIntegration failed→new intent success và checkout E2E |
+| Pay/expire/cancel race | PaymentIntegration actual DB clock after lock, accepted-before-expiry/commit-after-expiry, pay/cancel races |
+| Partial/full refunds, không vượt gốc | RefundIntegration same-key20/different-key5, DB over-refund guard, two-actor E2E partial→full |
+| Merchant locked/thiếu tiền, payer locked | RefundIntegration terminal failure/replay/newkey và original payer LOCKED success |
+| Atomicity/recovery/privacy | Audit fault rollback, reverse legs/orphan guards, owner authorization, lost response/reauth/reload E2E |
+| Financial reconciliation / package persistence | Read-only snapshot0 và refund lookup/replay/payer history sau JAR restart |
+
+P1a chỉ đóng sau khi toàn bộ full local và hosted gates đạt. Không suy ra public
+hosting, benchmark hoặc accessibility certification; P1b chưa được triển khai.
+
+## Final local verification sau resume
+
+- `./backend/mvnw.cmd -f backend/pom.xml -B -ntp -Pweb clean verify`:
+  **85/85**, 0 failures/errors/skips, BUILD SUCCESS4m47s. Includes final strict
+  currency/destination-injection/missing-capture security assertions. Log
+  `.tools/p1a03/backend-final.log`; no backend source edits after this gate.
+- Frontend format/lint PASS; unit **51/51**, 13 files (`unit-final.log`); strict
+  build và audit0 theo evidence trên. Không thêm dependencies. Final JAR chứa
+  **8 byte-identical dist files**, không có stale SPA assets.
+- Final connected **44/44**, 6.6m (`.tools/p1a03/e2e-full-final.log`). Lượt resume
+  chạy từ root với `--config frontend/playwright.config.ts`, cùng real app18082;
+  screenshots/trace/report artifacts của lượt này giữ trong
+  `.tools/p1a03/resume-test-results/`. CI chạy script chuẩn trong frontend.
+- `node infra/runtime-smoke.mjs` PASS (`runtime-final.log`): SPA/refund deep links,
+  session invalidation sau restart, persisted partial refund/lookup/replay,
+  merchant3000/payer7000 và original payer incoming history, PAID/PARTIAL,
+  P2P/payment regressions, default Secure/HttpOnly/Lax cookie.
+- Compose restart giữ volume sau interruption. V5→V6 preservation13 tables PASS;
+  Markdown **76 local links** đúng case/fences, OpenAPI **227 refs** resolve.
+- Milestones: `351a790` backend/DDL/contracts, `0749d4d` UI/recovery,
+  `ae09ba4` final security/navigation checks. Review độc lập không có finding
+  blocking; local verification không đồng nghĩa public deployment/performance.
+- Final read-only REPEATABLE READ reconciliation **0 findings**, exit0,
+  `.tools/p1a03/reconcile-final.log`; không sửa/seed/reset tiền. Mọi local gate đã
+  đạt trước merge; hosted gate còn pending. Dữ liệu/volume được giữ nguyên.
