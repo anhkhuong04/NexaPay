@@ -1,0 +1,13 @@
+.git
+.agents
+.tools
+.env
+.env.*
+**/node_modules
+**/target
+frontend/dist
+frontend/test-results
+frontend/playwright-report
+logo
+Docs
+Implementation Plan
