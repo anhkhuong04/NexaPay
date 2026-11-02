@@ -28,6 +28,9 @@ public class HistoryService {
    UNION ALL
    SELECT f.id,'DEMO_FUNDING',f.actor_id,'FUNDING',f.status,f.amount,f.currency,NULL::uuid,w.id,'',p.display_name,'',f.ledger_transaction_id,f.error_code,f.created_at
     FROM demo_fundings f JOIN wallets w ON w.ledger_account_id=f.account_id JOIN profiles p ON p.user_id=f.actor_id
+   UNION ALL
+   SELECT a.id,'PAYMENT',a.actor_id,'OUTGOING',a.status,a.amount,r.currency,a.source_wallet_id,a.destination_wallet_id,a.payer_name,r.merchant_name,r.description,p.ledger_transaction_id,a.error_code,a.created_at
+    FROM payment_attempts a JOIN payment_requests r ON r.id=a.request_id LEFT JOIN payments p ON p.attempt_id=a.id
   ) SELECT * FROM owned WHERE viewer_id=?
   """;
 
@@ -71,7 +74,7 @@ public class HistoryService {
 
   @Transactional(readOnly = true)
   public Transaction detail(UUID actor, String type, UUID id) {
-    if (!Set.of("TRANSFER", "DEMO_FUNDING").contains(type)) throw missing();
+    if (!Set.of("TRANSFER", "DEMO_FUNDING", "PAYMENT").contains(type)) throw missing();
     var rows = db.query(OWNED + " AND operation_type=? AND id=?", this::row, actor, type, id);
     if (rows.isEmpty()) throw missing();
     return rows.getFirst();

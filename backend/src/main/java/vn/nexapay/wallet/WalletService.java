@@ -80,6 +80,16 @@ public class WalletService {
     return new Wallet(wallet.id(), "VND", a.status(), balance, "0", balance);
   }
 
+  /** Merchant caller authorizes membership or immutable request before resolving this reference. */
+  @Transactional(readOnly = true)
+  public Reference merchantReference(UUID merchant) {
+    WalletEntity wallet =
+        repository
+            .findByMerchantId(merchant)
+            .orElseThrow(() -> new ApiFailure(404, "WALLET_NOT_FOUND", "Không tìm thấy ví."));
+    return new Reference(wallet.id(), wallet.account());
+  }
+
   @Transactional(readOnly = true)
   public Wallet own(UUID user) {
     WalletEntity wallet =

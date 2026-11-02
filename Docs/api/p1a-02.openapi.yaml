@@ -1,0 +1,550 @@
+openapi: 3.1.0
+info:
+  title: NexaPay P1a-02 Payment Request and Checkout
+  version: 0.1.0
+  description: Simulated VND only. Every pay claims command, locks request, reads
+    actual DB clock, then locks accounts UUID order. One capture per request. Pay
+    accepted before expiry can finish after expiry. FAILED attempts stay payer-owned;
+    request stays pending unless actually expired. Metadata creation has independent
+    merchant-scoped UUID key; reference-only recovery, never automatic POST on reload/re-auth.
+servers:
+- url: /api/v1
+paths:
+  /payment-requests/capabilities:
+    get:
+      summary: Authenticated server limits and demo environment epoch
+      security:
+      - sessionCookie: []
+      responses:
+        '200':
+          description: Authoritative result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Capabilities'
+        '400': &id002
+          description: Invalid schema/key/query
+          content:
+            application/json:
+              schema: &id001
+                $ref: p0-01.openapi.yaml#/components/schemas/Error
+        '401': &id003
+          description: Authentication required
+          content:
+            application/json:
+              schema: *id001
+        '403': &id004
+          description: Invalid CSRF
+          content:
+            application/json:
+              schema: *id001
+        '404': &id005
+          description: Unrelated resource or unobserved metadata reference
+          content:
+            application/json:
+              schema: *id001
+        '409': &id006
+          description: IDEMPOTENCY_CONFLICT
+          content:
+            application/json:
+              schema: *id001
+        '500': &id007
+          description: Technical failure; check original reference before retry
+          content:
+            application/json:
+              schema: *id001
+  /merchants/{merchant}/payment-requests:
+    parameters:
+    - name: merchant
+      in: path
+      required: true
+      schema: &id008
+        type: string
+        format: uuid
+    post:
+      summary: OWNER creates immutable request; same merchant/key/payload returns
+        same resource in current state
+      security:
+      - sessionCookie: []
+      responses:
+        '201':
+          description: Authoritative result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentRequest'
+        '400': *id002
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id006
+        '500': *id007
+      parameters:
+      - &id009
+        name: X-CSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+      - &id011
+        name: Idempotency-Key
+        in: header
+        required: true
+        schema: *id008
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRequest'
+    get:
+      summary: Owned requests, effective expiry, newest-first keyset page
+      security:
+      - sessionCookie: []
+      responses:
+        '200':
+          description: Authoritative result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestPage'
+        '400': *id002
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id006
+        '500': *id007
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+          maxLength: 200
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - PENDING
+          - PAID
+          - EXPIRED
+          - CANCELLED
+  /merchants/{merchant}/payment-requests/by-key/{key}:
+    parameters:
+    - name: merchant
+      in: path
+      required: true
+      schema: *id008
+    - name: key
+      in: path
+      required: true
+      schema: *id008
+    get:
+      summary: Owner lookup after lost creation response; 404 REQUEST_NOT_OBSERVED
+        is not proof of failure
+      security:
+      - sessionCookie: []
+      responses:
+        '200':
+          description: Authoritative result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentRequest'
+        '400': *id002
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id006
+        '500': *id007
+  /merchants/{merchant}/payment-requests/{id}:
+    parameters:
+    - name: merchant
+      in: path
+      required: true
+      schema: *id008
+    - name: id
+      in: path
+      required: true
+      schema: *id008
+    get:
+      summary: Owned detail; successful payment only, never other payer failed attempts
+      security:
+      - sessionCookie: []
+      responses:
+        '200':
+          description: Authoritative result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentRequest'
+        '400': *id002
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id006
+        '500': *id007
+  /merchants/{merchant}/payment-requests/{id}/cancel:
+    parameters:
+    - name: merchant
+      in: path
+      required: true
+      schema: *id008
+    - name: id
+      in: path
+      required: true
+      schema: *id008
+    post:
+      summary: Cancel pending under request lock; return current PAID/EXPIRED/CANCELLED
+        unchanged
+      security:
+      - sessionCookie: []
+      responses:
+        '200':
+          description: Authoritative result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentRequest'
+        '400': *id002
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id006
+        '500': *id007
+      parameters:
+      - *id009
+  /merchants/{merchant}/payments:
+    parameters:
+    - name: merchant
+      in: path
+      required: true
+      schema: *id008
+    get:
+      summary: Owned successful captures, minimal payer display name, no email/command
+        key
+      security:
+      - sessionCookie: []
+      responses:
+        '200':
+          description: Authoritative result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentPage'
+        '400': *id002
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id006
+        '500': *id007
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+          maxLength: 200
+  /merchants/{merchant}/payments/summary:
+    parameters:
+    - name: merchant
+      in: path
+      required: true
+      schema: *id008
+    get:
+      summary: Paid today/received today UTC, nonexpired pending count, latest five
+        captures
+      security:
+      - sessionCookie: []
+      responses:
+        '200':
+          description: Authoritative result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Summary'
+        '400': *id002
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id006
+        '500': *id007
+  /checkout/{ref}:
+    parameters:
+    - name: ref
+      in: path
+      required: true
+      schema: *id008
+    get:
+      summary: Public opaque checkout, minimal merchant/amount/description/expiry/status
+        only
+      security: []
+      responses:
+        '200':
+          description: Authoritative result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Checkout'
+        '400': *id002
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id006
+        '500': *id007
+  /checkout/{ref}/pay:
+    parameters:
+    - name: ref
+      in: path
+      required: true
+      schema: *id008
+    post:
+      summary: Payer confirms reviewed fixed amount; PAYMENT command resourceId is
+        attempt ID, success result includes paymentId
+      security:
+      - sessionCookie: []
+      responses:
+        '201':
+          description: Authoritative result
+          content:
+            application/json:
+              schema: &id010
+                $ref: p0-02.openapi.yaml#/components/schemas/Command
+        '400': *id002
+        '401': *id003
+        '403': *id004
+        '404': *id005
+        '409': *id006
+        '500': *id007
+        '422':
+          description: Stored terminal business rejection, no posting; original attempt
+            replays unchanged
+          content:
+            application/json:
+              schema: *id010
+        '429':
+          description: Shared 30 money commands/min/actor throttle, no key claim
+          content:
+            application/json:
+              schema: *id001
+        '503':
+          description: COMMAND_RETRYABLE rollback confirmed or COMMAND_UNRESOLVED;
+            lookup before same-key manual retry
+          content:
+            application/json:
+              schema: *id001
+      parameters:
+      - *id009
+      - *id011
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+              - amount
+              - currency
+              properties:
+                amount: &id012
+                  type: string
+                  pattern: ^(?:[1-9][0-9]{0,7}|100000000)$
+                currency:
+                  type: string
+                  const: VND
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
+  schemas:
+    Checkout:
+      type: object
+      required:
+      - publicRef
+      - merchantName
+      - amount
+      - currency
+      - description
+      - status
+      - createdAt
+      - expiresAt
+      properties:
+        publicRef: *id008
+        merchantName: &id014
+          type: string
+        amount: *id012
+        currency: &id015
+          type: string
+          const: VND
+        description: &id016
+          type: string
+        status: &id017
+          type: string
+          enum:
+          - PENDING
+          - PAID
+          - EXPIRED
+          - CANCELLED
+        createdAt: &id013
+          type: string
+          format: date-time
+        expiresAt: *id013
+      additionalProperties: false
+    Payment:
+      type: object
+      required:
+      - id
+      - requestId
+      - requestRef
+      - amount
+      - currency
+      - payerName
+      - paidAt
+      - ledgerTransactionId
+      properties:
+        id: *id008
+        requestId: *id008
+        requestRef: *id008
+        amount: *id012
+        currency:
+          const: VND
+        payerName:
+          type: string
+        paidAt: *id013
+        ledgerTransactionId: *id008
+    PaymentRequest:
+      allOf:
+      - type: object
+        required:
+        - publicRef
+        - merchantName
+        - amount
+        - currency
+        - description
+        - status
+        - createdAt
+        - expiresAt
+        - id
+        - payment
+        properties:
+          publicRef: *id008
+          merchantName: *id014
+          amount: *id012
+          currency: *id015
+          description: *id016
+          status: *id017
+          createdAt: *id013
+          expiresAt: *id013
+          id: *id008
+          payment:
+            oneOf:
+            - $ref: '#/components/schemas/Payment'
+            - type: 'null'
+    CreateRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - amount
+      - currency
+      - description
+      properties:
+        amount: *id012
+        currency:
+          type: string
+          const: VND
+        description:
+          type: string
+          minLength: 1
+          maxLength: 140
+          description: NFC/trim, nonblank, reject ISO controls before trim.
+        expiryMinutes:
+          type: integer
+          minimum: 5
+          maximum: 1440
+          default: 30
+    RequestPage:
+      type: object
+      required:
+      - items
+      - nextCursor
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentRequest'
+        nextCursor:
+          type:
+          - string
+          - 'null'
+    PaymentPage:
+      type: object
+      required:
+      - items
+      - nextCursor
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payment'
+        nextCursor:
+          type:
+          - string
+          - 'null'
+    Capabilities:
+      type: object
+      properties:
+        environmentEpoch: *id008
+        minAmount:
+          const: '1'
+        maxAmount:
+          const: '100000000'
+        currency:
+          const: VND
+        fee:
+          const: '0'
+        descriptionMaxLength:
+          const: 140
+        defaultExpiryMinutes:
+          const: 30
+        minExpiryMinutes:
+          const: 5
+        maxExpiryMinutes:
+          const: 1440
+    Summary:
+      type: object
+      properties:
+        paidToday:
+          type: integer
+          minimum: 0
+        receivedToday:
+          type: string
+          pattern: ^(0|[1-9][0-9]*)$
+        pendingRequests:
+          type: integer
+          minimum: 0
+        recentPayments:
+          type: array
+          maxItems: 5
+          items:
+            $ref: '#/components/schemas/Payment'

@@ -292,6 +292,7 @@ components:
           enum:
           - TRANSFER
           - DEMO_FUNDING
+          - PAYMENT
         resourceId:
           type: string
           format: uuid
@@ -332,6 +333,7 @@ components:
           enum:
           - TRANSFER
           - DEMO_FUNDING
+          - PAYMENT
         direction:
           enum:
           - INCOMING

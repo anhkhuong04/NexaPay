@@ -59,6 +59,8 @@ public class SecurityConfiguration {
                         "/api/v1/auth/register",
                         "/error")
                     .permitAll()
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/checkout/*")
+                    .permitAll()
                     .requestMatchers("/api/**")
                     .authenticated()
                     .anyRequest()
