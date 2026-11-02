@@ -1,6 +1,6 @@
 # P0-03 — Chuyển tiền P2P và lịch sử giao dịch
 
-**Ngày:** 02/11/2026 · **Trạng thái:** LOCAL VERIFIED — hosted CI pending
+**Ngày:** 02/11/2026 · **Trạng thái:** VERIFIED — local và hosted CI PASSED
 
 Tiếp nối P0-02 verified tại `9e91bb9`. Thực hiện trên branch
 `feat/p0-03-p2p-history`; commit theo mốc, push vào repository đã được user chỉ định.
@@ -76,7 +76,7 @@ MM-01–08; [UI spec](../Docs/NexaPay_UIUX_DESIGN_SPEC_v0.1.md) UI-05–07;
 - [x] Docker Compose build/up không reset volume; E2E `npm run test:e2e` against
   18082; runtime restart recovery smoke + read-only reconciliation CLI.
 - [x] Fresh whole-branch code review; resolve important findings with RED→GREEN.
-- [ ] Docs actual evidence, commit/push, hosted CI; chỉ mark verified khi pass.
+- [x] Docs actual evidence, commit/push, hosted CI; chỉ mark verified khi pass.
 
 ## Review focus
 
@@ -127,8 +127,9 @@ MM-01–08; [UI spec](../Docs/NexaPay_UIUX_DESIGN_SPEC_v0.1.md) UI-05–07;
   sau navigation invalidate actor views, delayed-response regression GREEN.
   Không có deferred review findings; reviewer declined-to-judge list rỗng.
 - Visual QA: desktop review và mobile review/history đã xem; 320px reflow,
-  labels/keyboard focus và axe WCAG2/2.1/2.2 checks pass. Screenshot capture trả
-  focus về control/main sau axe (scan thay focus), không sửa/ẩn focus trong app.
+  labels/keyboard focus và axe WCAG2/2.1/2.2 checks pass. Manual capture ở scroll-top
+  0 xác nhận không có overlay; full-page screenshot khi đang scroll có thể ghi
+  hidden fixed skip-link ngoài viewport. Không sửa/ẩn focus trong app.
 - Documents/YAML: 24 Markdown / 130 links+case/fences; 3 OpenAPI / 96 refs và
   CI YAML parse pass. JAR re-bundle frontend bằng các packaging goals sau full
   verify, không dùng packaging-only làm evidence tests. Runtime findings 0.
@@ -185,3 +186,22 @@ and automated axe/keyboard/reflow checks above do not substitute for every devic
   (`.tools/p003/logout-fix.log`). Hosted CI chạy lại ở commit sửa harness.
 - OpenAPI amount pattern được siết đúng 1..100000000 như server (không chỉ mô tả
   upper bound bằng prose); không thay limit đã chốt.
+
+## Hosted verification và bàn giao
+
+**PASSED:** [GitHub Actions run 41397070504](https://github.com/anhkhuong04/NexaPay/actions/runs/41397070504),
+commit `c0d8796cea7ded7c969f44567c8d282d3f58da46`, branch `main`.
+
+- Frontend: npm ci/format/lint, **17/17** unit tests, strict build, audit 0 vulnerabilities.
+- PostgreSQL/backend/package: **50/50**, 0 failed/errors/skipped, Maven BUILD SUCCESS.
+- Packaged restart/lookup/P2P replay/history/default-cookie smoke: PASSED.
+- Connected desktop/mobile: **16/16**, 1.2m; controlled logout preflight,
+  keyboard-confirm/review, privacy/detail, response loss/re-auth/reload and
+  delayed-result-after-navigation cùng pass.
+- Money reconciliation snapshot sau E2E: **0 findings**, PASSED. Reports upload PASSED.
+- Commit milestones: `f412774` P2P API, `fcff18d` history, `f73d6ae` note/guards,
+  `e7c5227` UI/recovery/review fixes, `63bcb96` packaging/evidence,
+  `c0d8796` deterministic logout harness. Commit tài liệu sau đó không đổi runtime.
+- Working tree sạch sau commit/push. Local Compose phục vụ bản mới tại
+  `http://127.0.0.1:18082`; V3 giữ dữ liệu cũ, không reset/repair. Slice P0-03 đã
+  hoàn tất; P1a merchant/payment/refund không nằm trong implementation này.
