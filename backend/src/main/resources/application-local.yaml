@@ -3,3 +3,6 @@ server:
     session:
       cookie:
         secure: false
+nexapay:
+  funding:
+    enabled: ${DEMO_FUNDING_ENABLED:true}

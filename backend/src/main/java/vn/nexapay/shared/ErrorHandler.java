@@ -25,8 +25,19 @@ public class ErrorHandler {
   ResponseEntity<?> business(ApiFailure e, HttpServletRequest r) {
     var response = errors.response(r, e.status(), e.code(), e.getMessage(), e.fields());
     if (e.status() == 429)
-      return ResponseEntity.status(429).header("Retry-After", "900").body(response.getBody());
+      return ResponseEntity.status(429)
+          .header("Retry-After", e.code().equals("COMMAND_THROTTLED") ? "60" : "900")
+          .body(response.getBody());
     return response;
+  }
+
+  @ExceptionHandler({
+    org.springframework.web.bind.MissingRequestHeaderException.class,
+    org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class
+  })
+  ResponseEntity<?> arguments(HttpServletRequest r) {
+    return errors.response(
+        r, 400, "INVALID_REQUEST", "Header hoặc tham số không hợp lệ.", Map.of());
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)

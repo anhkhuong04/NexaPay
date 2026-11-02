@@ -18,11 +18,16 @@ class AuditEvent {
   protected AuditEvent() {}
 
   AuditEvent(UUID actor, String action, UUID resource, String correlation, Instant now) {
+    this(actor, action, resource, correlation, now, "SUCCEEDED");
+  }
+
+  AuditEvent(
+      UUID actor, String action, UUID resource, String correlation, Instant now, String outcome) {
     this.id = UUID.randomUUID();
     this.actorId = actor;
     this.action = action;
     this.resourceId = resource;
-    this.outcome = "SUCCEEDED";
+    this.outcome = outcome;
     this.occurredAt = now;
     this.correlationId = correlation;
   }

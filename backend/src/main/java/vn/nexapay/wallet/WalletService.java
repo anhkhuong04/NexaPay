@@ -24,6 +24,17 @@ public class WalletService {
       String heldBalance,
       String totalBalance) {}
 
+  public record Reference(UUID walletId, UUID accountId) {}
+
+  @Transactional(readOnly = true)
+  public Reference reference(UUID user) {
+    WalletEntity wallet =
+        repository
+            .findByUserId(user)
+            .orElseThrow(() -> new ApiFailure(404, "WALLET_NOT_FOUND", "Không tìm thấy ví."));
+    return new Reference(wallet.id(), wallet.account());
+  }
+
   @Transactional(propagation = Propagation.MANDATORY)
   public UUID openPersonal(UUID user) {
     WalletEntity wallet = new WalletEntity(user, accounts.openPersonal());

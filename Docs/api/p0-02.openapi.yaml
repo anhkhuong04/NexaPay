@@ -1,0 +1,359 @@
+openapi: 3.1.0
+info:
+  title: NexaPay P0-02 funding and command recovery
+  version: 0.1.0
+  description: Simulated VND only. Same-origin session/CSRF and no-store. Schema/canonical
+    amount checked before key claim; unsupported preset 400, not a conflicting valid
+    intent. environmentEpoch persists until whole-dataset reset. Terminal records
+    have no TTL. Feature flag defaults off outside local profile. Request timeout
+    30s; unknown results require lookup, never a fresh key.
+servers:
+- url: /api/v1
+security:
+- session: []
+paths:
+  /demo-fundings:
+    post:
+      operationId: createDemoFunding
+      responses:
+        '201':
+          description: Committed success or identical replay
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Command'
+        '422':
+          description: Committed business rejection; same key replays original outcome
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Command'
+        '409':
+          description: Same key with conflicting canonical fingerprint
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '413':
+          description: Body exceeds 16 KiB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: Invalid schema/key/cursor; no command claim
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required; no claim
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: CSRF/feature denied; no claim
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Actor throttle; Retry-After; no claim
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: COMMAND_RETRYABLE after confirmed rollback or COMMAND_UNRESOLVED;
+            keep same intent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FundingInput'
+  /demo-fundings/capabilities:
+    get:
+      operationId: getFundingCapabilities
+      responses:
+        '200':
+          description: Current UTC quota snapshot and feature flag; no quota consumed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Capabilities'
+        '400':
+          description: Invalid schema/key/cursor; no command claim
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required; no claim
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: CSRF/feature denied; no claim
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Actor throttle; Retry-After; no claim
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: COMMAND_RETRYABLE after confirmed rollback or COMMAND_UNRESOLVED;
+            keep same intent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /commands/{operationType}/{key}:
+    get:
+      operationId: lookupCommand
+      responses:
+        '200':
+          description: Original terminal result, originalHttpStatus retained
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Command'
+        '404':
+          description: COMMAND_NOT_OBSERVED is not proof of failure; transaction can
+            still be running
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: Invalid schema/key/cursor; no command claim
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required; no claim
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: CSRF/feature denied; no claim
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Actor throttle; Retry-After; no claim
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: COMMAND_RETRYABLE after confirmed rollback or COMMAND_UNRESOLVED;
+            keep same intent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - in: path
+        name: operationType
+        required: true
+        schema:
+          type: string
+          enum:
+          - DEMO_FUNDING
+      - in: path
+        name: key
+        required: true
+        schema:
+          type: string
+          format: uuid
+  /commands:
+    get:
+      operationId: recentCommands
+      responses:
+        '200':
+          description: Only authenticated actor committed commands, createdAt/id descending
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandPage'
+        '400':
+          description: Invalid schema/key/cursor; no command claim
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required; no claim
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: CSRF/feature denied; no claim
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Actor throttle; Retry-After; no claim
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: COMMAND_RETRYABLE after confirmed rollback or COMMAND_UNRESOLVED;
+            keep same intent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - in: query
+        name: cursor
+        schema:
+          type: string
+          maxLength: 200
+components:
+  securitySchemes:
+    session:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
+  schemas:
+    FundingInput:
+      type: object
+      additionalProperties: false
+      required:
+      - amount
+      - currency
+      properties:
+        amount:
+          type: string
+          const: '100000'
+        currency:
+          type: string
+          const: VND
+    Command:
+      type: object
+      required:
+      - key
+      - operationType
+      - resourceId
+      - status
+      - originalHttpStatus
+      - createdAt
+      - result
+      - error
+      properties:
+        key:
+          type: string
+          format: uuid
+        operationType:
+          const: DEMO_FUNDING
+        resourceId:
+          type: string
+          format: uuid
+        status:
+          enum:
+          - SUCCEEDED
+          - FAILED
+        originalHttpStatus:
+          enum:
+          - 201
+          - 422
+        createdAt:
+          type: string
+          format: date-time
+        result:
+          type: object
+          description: 'Success: amount/currency/walletId/ledgerTransactionId. Failure:
+            empty. Does not represent current balance.'
+        error:
+          type: object
+          description: Failure code/message; empty on success.
+    Capabilities:
+      type: object
+      required:
+      - enabled
+      - environmentEpoch
+      - presetAmount
+      - currency
+      - userRemaining
+      - environmentRemaining
+      - nextResetAt
+      properties:
+        enabled:
+          type: boolean
+        environmentEpoch:
+          type: string
+          format: uuid
+        presetAmount:
+          type: string
+          const: '100000'
+        currency:
+          const: VND
+        userRemaining:
+          type: string
+          pattern: ^(0|[1-9][0-9]*)$
+        environmentRemaining:
+          type: string
+          pattern: ^(0|[1-9][0-9]*)$
+        nextResetAt:
+          type: string
+          format: date-time
+    CommandPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Command'
+        nextCursor:
+          type:
+          - string
+          - 'null'
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        correlationId:
+          type: string
+          format: uuid
+        fieldErrors:
+          type: object
