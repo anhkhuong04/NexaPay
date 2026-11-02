@@ -14,6 +14,7 @@ import org.springframework.security.web.context.*;
 import org.springframework.security.web.csrf.*;
 import org.springframework.security.web.savedrequest.NullRequestCache;
 import vn.nexapay.shared.ApiErrors;
+import vn.nexapay.shared.ApiPayloadLimitFilter;
 
 @Configuration
 public class SecurityConfiguration {
@@ -89,7 +90,8 @@ public class SecurityConfiguration {
                     c ->
                         c.policyDirectives(
                             "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'")))
-        .addFilterAfter(new SessionExpiryFilter(clock), SecurityContextHolderFilter.class);
+        .addFilterAfter(new SessionExpiryFilter(clock), SecurityContextHolderFilter.class)
+        .addFilterAfter(new ApiPayloadLimitFilter(errors), CsrfFilter.class);
     return http.build();
   }
 }

@@ -4,7 +4,8 @@ info:
   version: 0.1.0
   description: Simulation only. Same-origin HTTP session + CSRF. JSON money is integer
     strings. Correlation ID in safe error envelope. Secure cookies except explicit
-    local profile. All API responses are no-store.
+    local profile. All API responses are no-store. Unsafe API request bodies are limited
+    to 16 KiB, including chunked requests.
 servers:
 - url: /api/v1
 paths:
@@ -56,6 +57,12 @@ paths:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Safe technical failure; no internal exception details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '413':
+          description: Request body exceeds 16 KiB
           content:
             application/json:
               schema:
@@ -122,6 +129,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '413':
+          description: Request body exceeds 16 KiB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
       parameters:
       - in: header
         name: X-CSRF-TOKEN
@@ -150,6 +163,12 @@ paths:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Safe technical failure; no internal exception details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '413':
+          description: Request body exceeds 16 KiB
           content:
             application/json:
               schema:
@@ -245,6 +264,12 @@ paths:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Safe technical failure; no internal exception details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '413':
+          description: Request body exceeds 16 KiB
           content:
             application/json:
               schema:

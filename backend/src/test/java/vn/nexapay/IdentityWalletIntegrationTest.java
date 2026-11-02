@@ -80,6 +80,20 @@ class IdentityWalletIntegrationTest {
     return "u" + UUID.randomUUID() + "@example.test";
   }
 
+  @Test
+  void rejectsOversizedJsonBeforeRegistration() throws Exception {
+    Browser browser = new Browser();
+    long users = count("users");
+    var result =
+        browser.postJson(
+            "/api/v1/auth/register",
+            Map.of("email", email(), "password", "x".repeat(17000), "displayName", "Demo"));
+    assertThat(result.getResponse().getStatus()).isEqualTo(413);
+    assertThat(json.readTree(result.getResponse().getContentAsString()).get("code").asText())
+        .isEqualTo("REQUEST_TOO_LARGE");
+    assertThat(count("users")).isEqualTo(users);
+  }
+
   long count(String table) {
     return app.queryForObject("select count(*) from " + table, Long.class);
   }
