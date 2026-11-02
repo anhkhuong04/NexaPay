@@ -24,10 +24,10 @@ import {
   useNavigate,
   useOutletContext,
 } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { api, errorMessage, type Profile, type Session } from "./api";
+import { api, ApiError, errorMessage, type Profile, type Session } from "./api";
 import { Brand, FetchError, Loading, Notice, WalletPanel } from "./components";
 import { replaceActor, safeReturnTo, sessionOptions } from "./session";
 import { displayName, loginSchema, registerSchema } from "./validation";
@@ -625,9 +625,10 @@ function ProfileEditor({
   session: Session;
 }) {
   const client = useQueryClient();
+  const navigate = useNavigate();
   const [saved, setSaved] = useState(false);
   const {
-    register,
+    control,
     handleSubmit,
     setError,
     reset,
@@ -644,6 +645,14 @@ function ProfileEditor({
       reset({ displayName: updated.displayName });
       setSaved(true);
     } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        await replaceActor(client, null);
+        navigate("/auth/sign-in", {
+          replace: true,
+          state: { from: "/app/profile" },
+        });
+        return;
+      }
       setError("root", { message: errorMessage(error) });
     }
   });
@@ -666,7 +675,17 @@ function ProfileEditor({
           validationMessage={errors.displayName?.message}
           validationState={errors.displayName ? "error" : undefined}
         >
-          <Input autoComplete="nickname" {...register("displayName")} />
+          <Controller
+            name="displayName"
+            control={control}
+            render={({ field }) => (
+              <Input
+                autoComplete="nickname"
+                {...field}
+                onChange={(_, data) => field.onChange(data.value)}
+              />
+            )}
+          />
         </Field>
         {errors.root?.message && <Notice error>{errors.root.message}</Notice>}
         {saved && <Notice>Đã lưu thông tin hồ sơ.</Notice>}
