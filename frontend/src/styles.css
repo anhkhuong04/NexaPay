@@ -1446,3 +1446,21 @@ strong {
     gap: 4px;
   }
 }
+
+.overview-actions {
+  margin-bottom: 24px;
+}
+.overview-action-links {
+  display: flex;
+  gap: 12px 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.overview-action-links button,
+.overview-action-links a {
+  min-height: 44px;
+}
+.overview-action-links a {
+  display: inline-flex;
+  align-items: center;
+}

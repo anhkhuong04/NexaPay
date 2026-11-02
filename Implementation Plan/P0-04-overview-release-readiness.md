@@ -94,16 +94,16 @@ Backend `GET /api/v1/transactions` đã nhận limit 1..100 và sort createdAt/i
 **Files:** `App.tsx`/RecentActivity/components/style liên quan;
 `frontend/e2e/identity-wallet.spec.ts` hoặc file E2E Overview riêng.
 
-- [ ] RED: render LOCKED, loading và failed wallet fetch; assert banner/status,
+- [x] RED: render LOCKED, loading và failed wallet fetch; assert banner/status,
   disabled Send/Funding, history/commands còn dùng được. Expected: các link luôn
   active hiện tại không đạt assertion mới.
-- [ ] Implement trạng thái controls theo wallet data server; khi chưa biết status
+- [x] Implement trạng thái controls theo wallet data server; khi chưa biết status
   không render intent mới như đã sẵn sàng. Không dùng CSS-only disable anchor.
 - [ ] GREEN: keyboard, focus, labels/axe, mobile 390px và reflow 320px; recent list
   không overflow UUID/text dài. Test LOCKED UI dùng fixture có nhãn trong component
   hoặc controlled GET response; không mở API lock/admin hay sửa tiền runtime.
   Expected: controls chặn intent mới, mọi luồng tra cứu vẫn hoạt động.
-- [ ] Commit: `fix: align overview actions with wallet availability`.
+- [x] Commit: `fix: align overview actions with wallet availability`.
 
 ### Task 3 — P0 release evidence và bàn giao P1a
 
@@ -176,3 +176,8 @@ không phải prerequisite của kế hoạch này.
   instead of 5) → GREEN. Full frontend **23/23**, lint/build pass;
   `.tools/p004/red-recent.log`, `unit-task1.log`, `lint-task1.log`, `build-task1.log`.
   Connected runtime checks follow after Task 2; Task 1 chưa mark toàn bộ gate.
+
+- Task 2 milestone: 3 actions-state tests RED → GREEN; full frontend **26/26**,
+  8 files, lint + strict build pass (`.tools/p004/unit-final.log`, `lint-final.log`,
+  `build-final.log`). Actions dùng native disabled Fluent buttons, history/recovery
+  links vẫn mở. E2E mới gồm 3 journeys × desktop/mobile; runtime checks tiếp theo.

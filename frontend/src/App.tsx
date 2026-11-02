@@ -34,6 +34,7 @@ import { displayName, loginSchema, registerSchema } from "./validation";
 import { FundingPage, CommandsPage } from "./FundingPages";
 import { SendPage, HistoryPage, TransactionPage } from "./TransferPages";
 import { RecentActivity, recentActivityKey } from "./RecentActivity";
+import { OverviewActions } from "./OverviewActions";
 
 function RouteFocus() {
   const { pathname } = useLocation();
@@ -585,14 +586,11 @@ function Overview() {
           </Link>
         </section>
       </div>
-      <p>
-        <Link to="/app/send" className="button-link">
-          Chuyển tiền
-        </Link>{" "}
-        <Link to="/app/add-demo-funds" className="button-link">
-          Nhận tiền demo
-        </Link>
-      </p>
+      <OverviewActions
+        wallet={wallet.data}
+        loading={wallet.isPending}
+        error={wallet.error}
+      />
       <RecentActivity actorId={session.userId} />
       <section className="card wallet-details">
         <div className="section-heading">
