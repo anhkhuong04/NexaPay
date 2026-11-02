@@ -2,7 +2,7 @@
 
 **Ngày:** 02/11/2026
 
-**Trạng thái:** LOCAL VERIFIED — 60 backend / 34 frontend unit / 28 E2E; hosted CI pending; base `e940697`, branch `feat/p1a-01-merchant-wallet`.
+**Trạng thái:** VERIFIED local và GitHub Actions — 60 backend / 34 frontend unit / 28 E2E; base `e940697`, branch `feat/p1a-01-merchant-wallet`.
 
 ## Goal và baseline
 
@@ -51,7 +51,7 @@ Không KYC/staff/multi-merchant, payment/refund/Console/API khóa ví hoặc see
 - [x] 3. Full backend PostgreSQL `./backend/mvnw.cmd -B -ntp -f backend/pom.xml -Pweb verify`;
   frontend format/lint/test/build/audit. Compose config/build/up giữ volume; full
   desktop/mobile E2E/axe/reflow, packaged runtime smoke, reconciliation 0 findings.
-- [ ] 4. Review actual diff, migration upgrade từ V3 có dữ liệu; cập nhật OpenAPI,
+- [x] 4. Review actual diff, migration upgrade từ V3 có dữ liệu; cập nhật OpenAPI,
   UI states/README/index và evidence; commit/push main, hosted CI success trước VERIFIED.
 
 ## Verification risks
@@ -68,7 +68,7 @@ Không KYC/staff/multi-merchant, payment/refund/Console/API khóa ví hoặc see
 - Preflight: V1 wallets.user_id NOT NULL, PERSONAL-only account CHECK; recipient
   lookup hiện map profiles từ wallet.user. Cần sửa rõ exclusive ownership và lookup.
   History đã dùng personal reference. Không có merchant code/migration trước slice.
-- Commands/outcomes sẽ cập nhật từ output thật; chưa claim acceptance pass.
+- Commands/outcomes được ghi từ output thật trong acceptance bên dưới; không suy kết quả từ plan.
 
 - Backend milestone: initial behavior suite RED (missing merchant routes 404;
   spy setup MANDATORY error corrected by targeting unwrapped audit spy). GREEN
@@ -103,7 +103,7 @@ Không KYC/staff/multi-merchant, payment/refund/Console/API khóa ví hoặc see
 - Clean artifact gate: `-Pweb clean verify` **60/60**, 0 failed/errors/skips,
   BUILD SUCCESS, 2m19s (`.tools/p1a01/backend-full.log`). Compiled SpaController có
   business deep links; 7 frontend dist files byte-identical trong JAR. Packaged
-  restart smoke hiện đang chạy; chỉ mark release sau output PASS và hosted CI.
+  restart smoke sau đó PASS; hosted CI xác nhận theo mục cuối bên dưới.
 
 
 ## Acceptance evidence — local
@@ -141,11 +141,11 @@ Không KYC/staff/multi-merchant, payment/refund/Console/API khóa ví hoặc see
   `.tools/p1a01/reconcile-final.log`. All prior snapshot/quota/command checks retained,
   plus merchant graph/account type. Fault fixture nonzero covered by backend suite.
 - YAML: 4 OpenAPI files / 119 refs resolve, CI parses; 5 changed Markdown files /
-  53 local links+case/fences pass. JAR matches all 7 frontend dist files, compiled
+  54 local links+case/fences pass. JAR matches all 7 frontend dist files, compiled
   controller contains business deep links. Self-review found no remaining important
   issue; this is not independent reviewer approval.
 - Milestones: `7cead35` migration/API/DB tests/contracts, `d181d8b` business UI and
-  connected recovery. Hosted CI pending before final VERIFIED status.
+  connected recovery; `8b0e6a9` runtime/evidence/CI. Hosted CI PASSED theo mục cuối.
 
 ### Limits / next slice
 
@@ -160,3 +160,29 @@ and immutable amounts/expiry, one capture, self-payment exclusion, cancel/expire
 serialization, owned business queries + payer review/recovery and reconciliation.
 Use MERCHANT account capability/OWNER membership introduced here; no arbitrary
 P2P/funding into merchant. P1a-03 follows for full/partial refund and MM-09.
+
+
+## Hosted verification và bàn giao
+
+**PASSED:** [GitHub Actions run 41408005480](https://github.com/anhkhuong04/NexaPay/actions/runs/41408005480),
+branch `main`, code/evidence commit `8b0e6a9bf1a74854743d6e2303ffd68acd613d1d`.
+
+- Frontend npm ci/format/lint/strict build PASS; **34/34** tests, 10 files;
+  audit **0 vulnerabilities**.
+- PostgreSQL integration + packaged backend **60/60**, 0 failures/errors/skips;
+  Maven BUILD SUCCESS. Includes V3→V4 fixture preservation, membership/ownership,
+  8-way onboarding race, audit rollback, DB/customer guards và toàn bộ P0 regression.
+- Fresh packaged business SPA/API routing, restart/session invalidation, persisted
+  merchant/zero wallet/session membership + P2P lookup/replay/history/default
+  Secure/HttpOnly/Lax cookie: PASS.
+- Connected desktop/mobile **28/28**, 1.8m. Onboarding/rename/workspace isolation,
+  unknown result GET recovery/no auto POST, re-auth, unauthorized cross-actor,
+  pending/error/LOCKED fixture, keyboard/axe/reflow/zoom đều PASS.
+- Read-only reconciliation snapshot: **0 findings**, exit 0; verification artifact
+  upload PASS. Không có failed/skipped release gates còn mở.
+- Milestones đã commit và push `main`: `7cead35` backend/schema/contracts,
+  `d181d8b` business UI/recovery, `8b0e6a9` runtime checks/local evidence.
+  Commit tài liệu cuối chỉ cập nhật hosted evidence sau CI, không thay runtime.
+- Local Compose bản cuối tại `http://127.0.0.1:18082`; mở “Doanh nghiệp” hoặc
+  `/business/onboarding`. Database/volume được giữ nguyên. P1a-01 hoàn tất;
+  P1a-02/03 và MM-09 chưa implement/đóng gate.

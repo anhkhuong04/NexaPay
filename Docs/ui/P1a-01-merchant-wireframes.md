@@ -1,6 +1,6 @@
 # P1a-01 — Merchant states and ownership
 
-**02/11/2026 — Implementation local verified; hosted CI evidence tracked in slice plan.**
+**02/11/2026 — VERIFIED local và hosted CI; evidence trong [slice plan](<../../Implementation Plan/P1a-01-merchant-wallet.md>).**
 
 Routes: `/business/onboarding`, `/business/overview`, `/business/settings`.
 Workspace switcher ở sidebar, dùng link có tên hiển thị. Business nav chỉ Overview

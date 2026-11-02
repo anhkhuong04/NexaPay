@@ -180,6 +180,9 @@ issuance trong snapshot read-only; findings không được sửa tự động.
 
 ## Merchant onboarding & wallet — P1a-01
 
+**VERIFIED:** 60 backend / 34 frontend unit / 28 E2E; runtime smoke và đối soát
+0 findings; [GitHub Actions](https://github.com/anhkhuong04/NexaPay/actions/runs/41408005480).
+
 Sau khi đăng nhập, chọn “Doanh nghiệp” trong workspace switcher và nhập tên giả.
 Onboarding tạo merchant ACTIVE, OWNER membership và ví merchant 0 VND trong cùng
 transaction với audit. Một user chỉ có một merchant; request trùng trả 409 và
