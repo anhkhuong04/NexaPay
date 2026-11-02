@@ -1,3 +1,5 @@
+import { CheckoutPage } from "./CheckoutPage";
+import { PaymentBusinessPage } from "./PaymentBusinessPages";
 import { MerchantOnboarding, BusinessPage } from "./MerchantPages";
 import { useEffect, useState } from "react";
 import { Button, Field, Input } from "@fluentui/react-components";
@@ -467,6 +469,14 @@ function AppShell({ session }: { session: Session }) {
               <Home24Regular aria-hidden />
               Tổng quan doanh nghiệp
             </NavLink>
+            <NavLink to="/business/payment-requests">
+              <Wallet24Regular aria-hidden />
+              Yêu cầu thanh toán
+            </NavLink>
+            <NavLink to="/business/transactions">
+              <ArrowClockwise24Regular aria-hidden />
+              Thanh toán đã nhận
+            </NavLink>
             <NavLink to="/business/settings">
               <Person24Regular aria-hidden />
               Cài đặt doanh nghiệp
@@ -812,12 +822,29 @@ export function App() {
       <RouteFocus />
       <Routes>
         <Route path="/" element={<Landing />} />
+        <Route path="/pay/:ref" element={<CheckoutPage />} />
         <Route path="/auth" element={<AuthLayout />}>
           <Route path="sign-in" element={<SignIn />} />
           <Route path="sign-up" element={<SignUp />} />
         </Route>
         <Route path="/business" element={<Protected />}>
           <Route index element={<Navigate to="overview" replace />} />
+          <Route
+            path="payment-requests"
+            element={<PaymentBusinessPage mode="list" />}
+          />
+          <Route
+            path="payment-requests/new"
+            element={<PaymentBusinessPage mode="new" />}
+          />
+          <Route
+            path="payment-requests/:id"
+            element={<PaymentBusinessPage mode="detail" />}
+          />
+          <Route
+            path="transactions"
+            element={<PaymentBusinessPage mode="payments" />}
+          />
           <Route path="onboarding" element={<MerchantOnboarding />} />
           <Route path="overview" element={<BusinessPage />} />
           <Route path="settings" element={<BusinessPage settings />} />

@@ -34,18 +34,23 @@ export function Receipt({ result }: { result: CommandResult }) {
         {result.status === "SUCCEEDED"
           ? result.operationType === "TRANSFER"
             ? "Đã chuyển tiền"
-            : "Đã nhận tiền demo"
+            : result.operationType === "PAYMENT"
+              ? "Đã thanh toán"
+              : "Đã nhận tiền demo"
           : "Thao tác bị từ chối"}
       </h2>
       <Notice error={result.status === "FAILED"}>
         {result.status === "SUCCEEDED"
           ? result.operationType === "TRANSFER"
             ? `Đã chuyển ${formatMoney(result.result.amount!)} đến ${result.result.recipientName}.`
-            : `${formatMoney(result.result.amount!)} đã được ghi có vào ví của bạn.`
+            : result.operationType === "PAYMENT"
+              ? `Đã thanh toán ${formatMoney(result.result.amount!)} cho ${result.result.recipientName}.`
+              : `${formatMoney(result.result.amount!)} đã được ghi có vào ví của bạn.`
           : result.error.message}
       </Notice>
       <dl>
-        {result.operationType === "TRANSFER" && (
+        {(result.operationType === "TRANSFER" ||
+          result.operationType === "PAYMENT") && (
           <>
             <dt>Ví gửi</dt>
             <dd>{result.result.sourceWalletId}</dd>
@@ -60,6 +65,12 @@ export function Receipt({ result }: { result: CommandResult }) {
             <dd>{formatMoney(result.result.fee ?? "0")}</dd>
             <dt>Lời nhắn</dt>
             <dd>{result.result.note || "—"}</dd>
+          </>
+        )}
+        {result.operationType === "PAYMENT" && result.result.paymentId && (
+          <>
+            <dt>Mã thanh toán</dt>
+            <dd>{result.result.paymentId}</dd>
           </>
         )}
         <dt>Mã giao dịch</dt>
@@ -103,6 +114,7 @@ function FundingPanel({
   const [intent, setIntent] = useState<{
     key: string;
     operationType: CommandResult["operationType"];
+    checkoutRef?: string;
     draft?: FundingInput;
   } | null>(() => {
     const saved = readRecovery(session.userId, capabilities.environmentEpoch);
@@ -110,6 +122,7 @@ function FundingPanel({
     const memory = readMemoryIntent(saved);
     return {
       key: saved.key,
+      checkoutRef: saved.checkoutRef,
       operationType: saved.operationType,
       draft: memory?.operationType === "DEMO_FUNDING" ? memory.body : undefined,
     };
@@ -272,6 +285,12 @@ function FundingPanel({
                     >
                       Kiểm tra kết quả
                     </Button>
+                    {intent.operationType === "PAYMENT" &&
+                      intent.checkoutRef && (
+                        <Link to={`/pay/${intent.checkoutRef}`}>
+                          Tiếp tục thanh toán
+                        </Link>
+                      )}
                     {intent.operationType === "TRANSFER" && (
                       <Link to="/app/send">Tiếp tục chuyển tiền</Link>
                     )}
@@ -415,10 +434,14 @@ export function CommandsPage() {
                     {result.status === "SUCCEEDED"
                       ? result.operationType === "TRANSFER"
                         ? "Đã chuyển tiền"
-                        : "Đã nhận tiền demo"
+                        : result.operationType === "PAYMENT"
+                          ? "Đã thanh toán"
+                          : "Đã nhận tiền demo"
                       : result.operationType === "TRANSFER"
                         ? "Chuyển tiền bị từ chối"
-                        : "Cấp tiền bị từ chối"}
+                        : result.operationType === "PAYMENT"
+                          ? "Thanh toán bị từ chối"
+                          : "Cấp tiền bị từ chối"}
                   </strong>
                   <p>
                     {new Date(result.createdAt).toLocaleString("vi-VN", {

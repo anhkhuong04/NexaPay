@@ -1,8 +1,10 @@
+import type { PayInput } from "./payment";
 import type { FundingInput, Recovery } from "./funding";
 import type { TransferInput } from "./transfer";
 type MemoryIntent =
   | (Recovery & { operationType: "DEMO_FUNDING"; body: FundingInput })
-  | (Recovery & { operationType: "TRANSFER"; body: TransferInput });
+  | (Recovery & { operationType: "TRANSFER"; body: TransferInput })
+  | (Recovery & { operationType: "PAYMENT"; body: PayInput });
 // Tab memory only. Full reload discards payload; sessionStorage holds a reference.
 let pending: MemoryIntent | null = null;
 export function rememberIntent(intent: MemoryIntent) {

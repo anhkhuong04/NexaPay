@@ -1,3 +1,4 @@
+import { BusinessPaymentSummary } from "./PaymentBusinessPages";
 import { useState } from "react";
 import { Button, Field, Input } from "@fluentui/react-components";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -292,7 +293,10 @@ export function BusinessPage({ settings = false }: { settings?: boolean }) {
           merchant={data}
         />
       ) : (
-        <BusinessWallet actorId={session.userId} merchant={data} />
+        <>
+          <BusinessWallet actorId={session.userId} merchant={data} />
+          <BusinessPaymentSummary actor={session.userId} merchant={data.id} />
+        </>
       )}
       <section className="card">
         <h2>Hồ sơ merchant</h2>

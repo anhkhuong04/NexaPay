@@ -17,7 +17,7 @@ export interface FundingCapabilities {
 }
 export interface CommandResult {
   key: string;
-  operationType: "DEMO_FUNDING" | "TRANSFER";
+  operationType: "DEMO_FUNDING" | "TRANSFER" | "PAYMENT";
   resourceId: string;
   status: "SUCCEEDED" | "FAILED";
   originalHttpStatus: 201 | 422;
@@ -32,6 +32,8 @@ export interface CommandResult {
     destinationWalletId?: string;
     recipientName?: string;
     note?: string;
+    requestRef?: string;
+    paymentId?: string;
   };
   error: { code?: string; message?: string };
 }
@@ -40,9 +42,10 @@ export interface CommandPage {
   nextCursor: string | null;
 }
 export interface Recovery {
+  checkoutRef?: string;
   environmentEpoch: string;
   actorId: string;
-  operationType: "DEMO_FUNDING" | "TRANSFER";
+  operationType: "DEMO_FUNDING" | "TRANSFER" | "PAYMENT";
   key: string;
 }
 export const RECOVERY_KEY = "nexapay.money-recovery";
@@ -64,7 +67,15 @@ export function cacheTerminal(
 export function refreshMoneyViews(client: QueryClient, actorId: string) {
   if (client.getQueryData<Session | null>(["session"])?.userId !== actorId)
     return;
-  for (const domain of ["wallet", "history", "commands", "funding"])
+  for (const domain of [
+    "wallet",
+    "history",
+    "commands",
+    "funding",
+    "checkout",
+    "payment-requests",
+    "merchant-payments",
+  ])
     void client.invalidateQueries({ queryKey: [domain, actorId] });
 }
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -82,7 +93,11 @@ export function readRecovery(actorId: string, epoch: string): Recovery | null {
       raw.environmentEpoch === epoch &&
       "operationType" in raw &&
       (raw.operationType === "DEMO_FUNDING" ||
-        raw.operationType === "TRANSFER") &&
+        raw.operationType === "TRANSFER" ||
+        (raw.operationType === "PAYMENT" &&
+          "checkoutRef" in raw &&
+          typeof raw.checkoutRef === "string" &&
+          uuid.test(raw.checkoutRef))) &&
       "key" in raw &&
       typeof raw.key === "string" &&
       uuid.test(raw.key)
@@ -92,6 +107,9 @@ export function readRecovery(actorId: string, epoch: string): Recovery | null {
         environmentEpoch: epoch,
         operationType: raw.operationType,
         key: raw.key,
+        ...(raw.operationType === "PAYMENT" && "checkoutRef" in raw
+          ? { checkoutRef: raw.checkoutRef as string }
+          : {}),
       };
   } catch {
     /* Invalid reference is discarded; never replay stored payload. */

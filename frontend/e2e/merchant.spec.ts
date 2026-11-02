@@ -108,8 +108,8 @@ test("merchant onboarding keeps personal funds separate and persists owner profi
   expect(session.roles).toContain("MERCHANT");
   expect(session.roles).not.toContain("ADMIN");
   await expect(
-    page.getByRole("button", { name: "Tạo yêu cầu thanh toán", exact: true }),
-  ).toHaveCount(0);
+    page.getByRole("link", { name: "Tạo yêu cầu thanh toán", exact: true }),
+  ).toHaveAttribute("href", "/business/payment-requests/new");
   await scan(page);
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({

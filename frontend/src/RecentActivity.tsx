@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { FetchError, Loading } from "./components";
 import {
-  directionLabel,
+  transactionLabel,
   localTime,
   transferApi,
   type Transaction,
@@ -30,7 +30,7 @@ function Activity({ transaction: t }: { transaction: Transaction }) {
     <li>
       <article className="recent-row">
         <div className="recent-description">
-          <h3>{directionLabel(t.direction)}</h3>
+          <h3>{transactionLabel(t)}</h3>
           <p className="recent-party">
             {party || "Ví người nhận không tồn tại"}
           </p>

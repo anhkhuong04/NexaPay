@@ -34,7 +34,7 @@ import {
   type CommandResult,
 } from "./funding";
 import {
-  directionLabel,
+  transactionLabel,
   localTime,
   parseVndInput,
   transferApi,
@@ -81,6 +81,7 @@ function SendPanel({
   const [intent, setIntent] = useState<{
     key: string;
     operationType: CommandResult["operationType"];
+    checkoutRef?: string;
     draft?: TransferInput;
   } | null>(() => {
     const ref = readRecovery(session.userId, caps.environmentEpoch);
@@ -88,6 +89,7 @@ function SendPanel({
     const memory = readMemoryIntent(ref);
     return {
       key: ref.key,
+      checkoutRef: ref.checkoutRef,
       operationType: ref.operationType,
       draft: memory?.operationType === "TRANSFER" ? memory.body : undefined,
     };
@@ -389,7 +391,9 @@ function SendPanel({
               <h2>
                 {intent.operationType === "TRANSFER"
                   ? "Kết quả chuyển tiền"
-                  : "Khôi phục thao tác cấp tiền"}
+                  : intent.operationType === "PAYMENT"
+                    ? "Khôi phục thanh toán"
+                    : "Khôi phục thao tác cấp tiền"}
               </h2>
               <p>
                 Mã thao tác: <code>{intent.key}</code>
@@ -417,6 +421,12 @@ function SendPanel({
                       >
                         Kiểm tra trạng thái
                       </Button>
+                      {intent.operationType === "PAYMENT" &&
+                        intent.checkoutRef && (
+                          <Link to={`/pay/${intent.checkoutRef}`}>
+                            Tiếp tục thanh toán
+                          </Link>
+                        )}
                       {intent.operationType === "DEMO_FUNDING" && (
                         <Link to="/app/add-demo-funds">
                           Tiếp tục thao tác cấp tiền
@@ -614,7 +624,7 @@ export function HistoryPage() {
                 key={`${t.operationType}:${t.id}`}
               >
                 <div>
-                  <h2>{directionLabel(t.direction)}</h2>
+                  <h2>{transactionLabel(t)}</h2>
                   <p>
                     {t.direction === "INCOMING"
                       ? t.senderName
@@ -676,7 +686,7 @@ export function TransactionPage() {
       ) : (
         t && (
           <section className="card funding-receipt">
-            <h2>{directionLabel(t.direction)}</h2>
+            <h2>{transactionLabel(t)}</h2>
             <Notice error={t.status === "FAILED"}>
               {t.status === "SUCCEEDED"
                 ? "Giao dịch thành công"

@@ -116,3 +116,10 @@ export function directionLabel(direction: Direction) {
     FUNDING: "Nhận tiền demo",
   }[direction];
 }
+
+export const transactionLabel = (
+  transaction: Pick<Transaction, "operationType" | "direction">,
+) =>
+  transaction.operationType === "PAYMENT"
+    ? "Thanh toán doanh nghiệp"
+    : directionLabel(transaction.direction);

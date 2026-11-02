@@ -1529,3 +1529,97 @@ strong {
     align-items: flex-start;
   }
 }
+
+.checkout-page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  display: grid;
+  gap: 24px;
+  overflow-wrap: anywhere;
+}
+.checkout-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.checkout-page h1 {
+  margin-bottom: 0;
+}
+.checkout-page .card {
+  min-width: 0;
+}
+.checkout-page button,
+.business-page button,
+.business-page input,
+.business-page select,
+.business-page textarea {
+  min-height: 44px;
+}
+.checkout-page a,
+.business-page a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.checkout-page code,
+.request-row code {
+  overflow-wrap: anywhere;
+}
+.payment-result {
+  display: grid;
+  gap: 16px;
+}
+.share-grid {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 24px;
+  align-items: center;
+}
+.share-grid img {
+  max-width: 100%;
+  height: auto;
+}
+.share-grid > div {
+  min-width: 0;
+}
+.request-row {
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.request-row h2,
+.request-row h3 {
+  font-size: 18px;
+}
+.request-row p {
+  margin: 8px 0;
+}
+.request-row > div {
+  min-width: 0;
+}
+.request-detail-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+@media (max-width: 640px) {
+  .share-grid {
+    grid-template-columns: 1fr;
+  }
+  .request-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .checkout-page {
+    padding: 24px 16px;
+  }
+}
