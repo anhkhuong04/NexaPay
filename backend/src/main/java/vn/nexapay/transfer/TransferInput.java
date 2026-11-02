@@ -20,7 +20,7 @@ public record TransferInput(
     String text = Normalizer.normalize(note == null ? "" : note.strip(), Normalizer.Form.NFC);
     if (value > 100000000
         || text.codePointCount(0, text.length()) > 140
-        || text.codePoints().anyMatch(Character::isISOControl))
+        || (note != null && note.codePoints().anyMatch(Character::isISOControl)))
       throw new ApiFailure(400, "VALIDATION_ERROR", "Số tiền hoặc lời nhắn không hợp lệ.");
     return new Intent(UUID.fromString(destinationWalletId), value, text);
   }

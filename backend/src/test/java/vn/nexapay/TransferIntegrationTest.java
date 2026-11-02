@@ -58,6 +58,8 @@ class TransferIntegrationTest {
   @Autowired FundingService funding;
   @Autowired WalletService wallets;
   @Autowired CommandStore commands;
+  @Autowired org.springframework.transaction.PlatformTransactionManager manager;
+  @Autowired vn.nexapay.ledger.MoneyPostingService posting;
   @MockitoSpyBean AuditService audit;
   @org.springframework.test.context.bean.override.mockito.MockitoBean Clock clock;
   JdbcTemplate owner;
@@ -411,5 +413,115 @@ class TransferIntegrationTest {
     } finally {
       pool.shutdownNow();
     }
+  }
+
+  @Test
+  void controlCharactersAreRejectedBeforeNoteTrimmingWithoutClaim() throws Exception {
+    var a = actor();
+    var b = actor();
+    long before = db.queryForObject("SELECT count(*) FROM money_commands", Long.class);
+    for (String note : List.of("\nhello", "hello\t", "he\u0000llo"))
+      assertThat(postTransfer(a, UUID.randomUUID(), wallet(b), "1", note).getResponse().getStatus())
+          .isEqualTo(400);
+    assertThat(db.queryForObject("SELECT count(*) FROM money_commands", Long.class))
+        .isEqualTo(before);
+  }
+
+  @Test
+  void reconciliationUsesOneSnapshotAcrossConcurrentTransferCommitAndDetectsOrphan()
+      throws Exception {
+    var a = actor();
+    var b = actor();
+    fund(a);
+    var read = new org.springframework.transaction.support.TransactionTemplate(manager);
+    read.setReadOnly(true);
+    read.setIsolationLevel(
+        org.springframework.transaction.TransactionDefinition.ISOLATION_REPEATABLE_READ);
+    var pool = Executors.newSingleThreadExecutor();
+    try {
+      read.executeWithoutResult(
+          s -> {
+            healthy();
+            var before = db.queryForObject("SELECT count(*) FROM transfers", Long.class);
+            try {
+              assertThat(
+                      pool.submit(() -> transfer(a, UUID.randomUUID(), wallet(b), "1", ""))
+                          .get(10, TimeUnit.SECONDS)
+                          .status())
+                  .isEqualTo("SUCCEEDED");
+            } catch (Exception e) {
+              throw new RuntimeException(e);
+            }
+            healthy();
+            assertThat(db.queryForObject("SELECT count(*) FROM transfers", Long.class))
+                .isEqualTo(before);
+          });
+    } finally {
+      pool.shutdownNow();
+    }
+    var tx = new org.springframework.transaction.support.TransactionTemplate(manager);
+    tx.executeWithoutResult(
+        s -> {
+          posting.post(
+              "TRANSFER",
+              UUID.randomUUID(),
+              List.of(
+                  new vn.nexapay.ledger.MoneyPostingService.Entry(
+                      wallets.reference(a.id()).accountId(), -1),
+                  new vn.nexapay.ledger.MoneyPostingService.Entry(
+                      wallets.reference(b.id()).accountId(), 1)));
+          assertThat(
+                  db.queryForList(
+                      "SELECT * FROM reconciliation_findings() WHERE check_name='orphan_transfer_posting'"))
+              .hasSize(1);
+          s.setRollbackOnly();
+        });
+    healthy();
+  }
+
+  @Test
+  void terminalTransferAndMismatchedJournalCannotBeEditedOrCommitted() throws Exception {
+    var a = actor();
+    var b = actor();
+    fund(a);
+    var done = transfer(a, UUID.randomUUID(), wallet(b), "1", "");
+    assertThatThrownBy(
+            () -> db.update("UPDATE transfers SET note='edited' WHERE id=?", done.resourceId()))
+        .isInstanceOf(org.springframework.dao.DataAccessException.class);
+    assertThatThrownBy(() -> owner.update("DELETE FROM transfers WHERE id=?", done.resourceId()))
+        .isInstanceOf(org.springframework.dao.DataAccessException.class);
+    var tx = new org.springframework.transaction.support.TransactionTemplate(manager);
+    assertThatThrownBy(
+            () ->
+                tx.executeWithoutResult(
+                    s -> {
+                      UUID id = UUID.randomUUID(), key = UUID.randomUUID();
+                      var now = Instant.parse("2026-11-02T05:00:00Z");
+                      var claim =
+                          commands.claim(a.id(), "TRANSFER", key, "test-wrong-journal", now);
+                      UUID journal =
+                          posting.post(
+                              "TRANSFER",
+                              id,
+                              List.of(
+                                  new vn.nexapay.ledger.MoneyPostingService.Entry(
+                                      wallets.reference(a.id()).accountId(), -1),
+                                  new vn.nexapay.ledger.MoneyPostingService.Entry(
+                                      wallets.reference(b.id()).accountId(), 1)));
+                      db.update(
+                          "INSERT INTO transfers(id,command_id,actor_id,source_wallet_id,source_account_id,destination_wallet_id,destination_account_id,sender_name,recipient_name,amount,currency,note,status,ledger_transaction_id,created_at) SELECT ?,?,actor_id,source_wallet_id,source_account_id,destination_wallet_id,destination_account_id,sender_name,recipient_name,2,'VND','','SUCCEEDED',?,created_at FROM transfers WHERE id=?",
+                          id,
+                          claim.id(),
+                          journal,
+                          done.resourceId());
+                      commands.finish(
+                          claim.id(),
+                          new CommandStore.Terminal(
+                              key, "TRANSFER", id, "SUCCEEDED", 201, now, Map.of(), Map.of()));
+                    }))
+        .isInstanceOf(RuntimeException.class);
+    assertThat(balance(a)).isEqualTo(99999);
+    assertThat(balance(b)).isEqualTo(1);
+    healthy();
   }
 }
