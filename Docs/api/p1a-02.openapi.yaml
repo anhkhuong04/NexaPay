@@ -422,6 +422,9 @@ components:
       - payerName
       - paidAt
       - ledgerTransactionId
+      - refundedAmount
+      - refundableAmount
+      - refundStatus
       properties:
         id: *id008
         requestId: *id008
@@ -433,6 +436,17 @@ components:
           type: string
         paidAt: *id013
         ledgerTransactionId: *id008
+        refundedAmount:
+          type: string
+          pattern: ^(0|[1-9][0-9]*)$
+        refundableAmount:
+          type: string
+          pattern: ^(0|[1-9][0-9]*)$
+        refundStatus:
+          enum:
+          - NONE
+          - PARTIAL
+          - FULL
     PaymentRequest:
       allOf:
       - type: object
@@ -548,3 +562,12 @@ components:
           maxItems: 5
           items:
             $ref: '#/components/schemas/Payment'
+        refundsToday:
+          type: integer
+          minimum: 0
+        refundedToday:
+          type: string
+          pattern: ^(0|[1-9][0-9]*)$
+      required:
+      - refundsToday
+      - refundedToday

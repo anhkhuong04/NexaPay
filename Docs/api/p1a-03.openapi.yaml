@@ -1,0 +1,247 @@
+openapi: 3.1.0
+info:
+  title: NexaPay P1a-03 Full/Partial Refund
+  version: 0.1.0
+  description: Simulated VND. Synchronous merchant-owned refund to original payer,
+    including locked payer. Claim → payment lock → accounts UUID order → reverse legs/refund/result/audit
+    atomic. Sum successes <= capture, original PAID unchanged. Terminal replay before
+    current eligibility; no pending debt.
+servers:
+- url: /api/v1
+paths:
+  /merchants/{merchant}/payments/{payment}:
+    parameters:
+    - name: merchant
+      in: path
+      required: true
+      schema: &id001
+        type: string
+        format: uuid
+    - name: payment
+      in: path
+      required: true
+      schema: *id001
+    get:
+      summary: Owned capture with derived refunded/refundable/status
+      security: &id003
+      - sessionCookie: []
+      parameters: &id005 []
+      responses:
+        '200':
+          description: Authoritative result
+          content:
+            application/json:
+              schema:
+                $ref: p1a-02.openapi.yaml#/components/schemas/Payment
+        '400': &id002
+          description: Typed error, unrelated ownership concealed as404
+          content:
+            application/json:
+              schema:
+                $ref: p0-01.openapi.yaml#/components/schemas/Error
+        '401': *id002
+        '403': *id002
+        '404': *id002
+        '500': *id002
+  /merchants/{merchant}/payments/{payment}/refunds:
+    parameters:
+    - name: merchant
+      in: path
+      required: true
+      schema: *id001
+    - name: payment
+      in: path
+      required: true
+      schema: *id001
+    post:
+      summary: Full remaining or partial refund with explicit reviewed amount, never
+        recalculate retry amount
+      security: *id003
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema: *id001
+      - name: X-CSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefundInput'
+      responses:
+        '201':
+          description: Authoritative result
+          content:
+            application/json:
+              schema: &id004
+                $ref: p0-02.openapi.yaml#/components/schemas/Command
+        '422':
+          description: Authoritative result
+          content:
+            application/json:
+              schema: *id004
+        '400': *id002
+        '401': *id002
+        '403': *id002
+        '404': *id002
+        '409': *id002
+        '429': *id002
+        '500': *id002
+        '503': *id002
+  /merchants/{merchant}/refunds:
+    parameters:
+    - name: merchant
+      in: path
+      required: true
+      schema: *id001
+    get:
+      summary: Owned successful/failed refunds, no command key or email
+      security: *id003
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+          maxLength: 200
+      - name: status
+        in: query
+        required: false
+        schema:
+          enum:
+          - SUCCEEDED
+          - FAILED
+      - name: paymentId
+        in: query
+        required: false
+        schema: *id001
+      responses:
+        '200':
+          description: Authoritative result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefundPage'
+        '400': *id002
+        '401': *id002
+        '403': *id002
+        '404': *id002
+        '500': *id002
+  /merchants/{merchant}/refunds/{id}:
+    parameters:
+    - name: merchant
+      in: path
+      required: true
+      schema: *id001
+    - name: id
+      in: path
+      required: true
+      schema: *id001
+    get:
+      summary: Owned refund detail, unrelated resources404
+      security: *id003
+      parameters: *id005
+      responses:
+        '200':
+          description: Authoritative result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Refund'
+        '400': *id002
+        '401': *id002
+        '403': *id002
+        '404': *id002
+        '500': *id002
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
+  schemas:
+    RefundInput:
+      type: object
+      required:
+      - amount
+      - currency
+      properties:
+        amount: &id006
+          type: string
+          pattern: ^[1-9][0-9]{0,8}$
+          description: Canonical integer VND, <=100000000
+        currency:
+          const: VND
+        note:
+          type: string
+          maxLength: 140
+          default: ''
+          description: NFC/trim <=140 Unicode points, no controls; canonical note
+            participates in fingerprint
+    Refund:
+      type: object
+      required:
+      - id
+      - paymentId
+      - amount
+      - currency
+      - note
+      - payerName
+      - status
+      - ledgerTransactionId
+      - errorCode
+      - createdAt
+      properties:
+        id: *id001
+        paymentId: *id001
+        amount: *id006
+        currency:
+          const: VND
+        note:
+          type: string
+          maxLength: 140
+        payerName:
+          type: string
+        status:
+          enum:
+          - SUCCEEDED
+          - FAILED
+        ledgerTransactionId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        errorCode:
+          type:
+          - string
+          - 'null'
+        createdAt:
+          type: string
+          format: date-time
+    RefundPage:
+      type: object
+      required:
+      - items
+      - nextCursor
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Refund'
+        nextCursor:
+          type:
+          - string
+          - 'null'

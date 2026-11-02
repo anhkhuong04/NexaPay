@@ -67,7 +67,10 @@ public class PaymentRequests {
       String currency,
       String payerName,
       Instant paidAt,
-      UUID ledgerTransactionId) {}
+      UUID ledgerTransactionId,
+      String refundedAmount,
+      String refundableAmount,
+      String refundStatus) {}
 
   public record Page<T>(List<T> items, String nextCursor) {}
 
@@ -75,7 +78,9 @@ public class PaymentRequests {
       long paidToday,
       String receivedToday,
       long pendingRequests,
-      List<PaymentView> recentPayments) {}
+      List<PaymentView> recentPayments,
+      long refundsToday,
+      String refundedToday) {}
 
   public record Capabilities(
       UUID environmentEpoch,
@@ -284,11 +289,69 @@ public class PaymentRequests {
         ((Number) values.get("n")).longValue(),
         (String) values.get("total"),
         pending,
-        payments(actor, merchant, 5, null).items());
+        payments(actor, merchant, 5, null).items(),
+        db.queryForObject(
+            "SELECT count(*) FROM refunds WHERE merchant_id=? AND status='SUCCEEDED' AND created_at>=date_trunc('day',clock_timestamp() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'",
+            Long.class,
+            merchant),
+        db.queryForObject(
+            "SELECT coalesce(sum(amount::numeric),0)::text FROM refunds WHERE merchant_id=? AND status='SUCCEEDED' AND created_at>=date_trunc('day',clock_timestamp() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'",
+            String.class,
+            merchant));
+  }
+
+  @Transactional(readOnly = true)
+  public PaymentView paymentDetail(UUID actor, UUID merchant, UUID id) {
+    merchants.profile(actor, merchant);
+    var rows =
+        db.query(PAYMENTS + " WHERE p.id=? AND p.merchant_id=?", this::payment, id, merchant);
+    if (rows.isEmpty())
+      throw new ApiFailure(404, "PAYMENT_NOT_FOUND", "Không tìm thấy thanh toán.");
+    return rows.getFirst();
+  }
+
+  public record Capture(
+      UUID id,
+      UUID merchantId,
+      long amount,
+      UUID payerId,
+      UUID payerAccount,
+      UUID merchantAccount,
+      UUID payerWallet,
+      UUID merchantWallet,
+      String payerName,
+      String merchantName) {}
+
+  /**
+   * Caller authorizes merchant membership. Immutable capture lock precedes every refund account
+   * lock.
+   */
+  @Transactional(propagation = Propagation.MANDATORY)
+  public Capture lockCapture(UUID merchant, UUID id) {
+    var rows =
+        db.query(
+            "SELECT p.*,a.actor_id,a.source_wallet_id,a.destination_wallet_id,a.payer_name,r.merchant_name FROM lock_refund_payment(?,?) p JOIN payment_attempts a ON a.id=p.attempt_id JOIN payment_requests r ON r.id=p.request_id",
+            (r, n) ->
+                new Capture(
+                    r.getObject("id", UUID.class),
+                    r.getObject("merchant_id", UUID.class),
+                    r.getLong("amount"),
+                    r.getObject("actor_id", UUID.class),
+                    r.getObject("source_account_id", UUID.class),
+                    r.getObject("destination_account_id", UUID.class),
+                    r.getObject("source_wallet_id", UUID.class),
+                    r.getObject("destination_wallet_id", UUID.class),
+                    r.getString("payer_name"),
+                    r.getString("merchant_name")),
+            id,
+            merchant);
+    if (rows.isEmpty())
+      throw new ApiFailure(404, "PAYMENT_NOT_FOUND", "Không tìm thấy thanh toán.");
+    return rows.getFirst();
   }
 
   private static final String PAYMENTS =
-      "SELECT p.*,r.public_ref,a.payer_name FROM payments p JOIN payment_requests r ON r.id=p.request_id JOIN payment_attempts a ON a.id=p.attempt_id";
+      "SELECT p.*,r.public_ref,a.payer_name,coalesce((SELECT sum(f.amount::numeric) FROM refunds f WHERE f.payment_id=p.id AND f.status='SUCCEEDED'),0)::bigint AS refunded FROM payments p JOIN payment_requests r ON r.id=p.request_id JOIN payment_attempts a ON a.id=p.attempt_id";
 
   private PaymentView payment(java.sql.ResultSet r, int n) throws java.sql.SQLException {
     return new PaymentView(
@@ -299,7 +362,12 @@ public class PaymentRequests {
         "VND",
         r.getString("payer_name"),
         r.getTimestamp("created_at").toInstant(),
-        r.getObject("ledger_transaction_id", UUID.class));
+        r.getObject("ledger_transaction_id", UUID.class),
+        Long.toString(r.getLong("refunded")),
+        Long.toString(r.getLong("amount") - r.getLong("refunded")),
+        r.getLong("refunded") == 0
+            ? "NONE"
+            : r.getLong("refunded") == r.getLong("amount") ? "FULL" : "PARTIAL");
   }
 
   private Detail detail(Row r) {

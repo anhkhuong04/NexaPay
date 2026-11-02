@@ -88,6 +88,14 @@ public class PaymentController {
     return requests.payments(actor.id(), merchant, limit, cursor);
   }
 
+  @GetMapping("/merchants/{merchant}/payments/{id}")
+  PaymentRequests.PaymentView payment(
+      @AuthenticationPrincipal ActorPrincipal actor,
+      @PathVariable UUID merchant,
+      @PathVariable UUID id) {
+    return requests.paymentDetail(actor.id(), merchant, id);
+  }
+
   @GetMapping("/merchants/{merchant}/payments/summary")
   PaymentRequests.Summary summary(
       @AuthenticationPrincipal ActorPrincipal actor, @PathVariable UUID merchant) {

@@ -183,9 +183,11 @@ paths:
         name: operationType
         required: true
         schema:
-          type: string
           enum:
           - DEMO_FUNDING
+          - TRANSFER
+          - PAYMENT
+          - REFUND
       - in: path
         name: key
         required: true
@@ -282,7 +284,11 @@ components:
           type: string
           format: uuid
         operationType:
-          const: DEMO_FUNDING
+          enum:
+          - DEMO_FUNDING
+          - TRANSFER
+          - PAYMENT
+          - REFUND
         resourceId:
           type: string
           format: uuid

@@ -195,7 +195,8 @@ paths:
           type: string
       responses:
         '200':
-          description: Owned detail, type TRANSFER or DEMO_FUNDING
+          description: Owned detail, type TRANSFER, DEMO_FUNDING, PAYMENT or successful
+            REFUND
           content:
             application/json:
               schema:
@@ -236,8 +237,8 @@ paths:
           type: string
       responses:
         '200':
-          description: Actor terminal command. TRANSFER or DEMO_FUNDING. Original
-            HTTP status retained.
+          description: Actor terminal command. TRANSFER, DEMO_FUNDING, PAYMENT or
+            REFUND. Original HTTP status retained.
           content:
             application/json:
               schema:
@@ -293,6 +294,7 @@ components:
           - TRANSFER
           - DEMO_FUNDING
           - PAYMENT
+          - REFUND
         resourceId:
           type: string
           format: uuid
@@ -334,6 +336,7 @@ components:
           - TRANSFER
           - DEMO_FUNDING
           - PAYMENT
+          - REFUND
         direction:
           enum:
           - INCOMING
@@ -376,6 +379,12 @@ components:
         createdAt:
           type: string
           format: date-time
+        paymentId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+          description: Original capture for PAYMENT/REFUND, null for other operations
     Recipient:
       type: object
       additionalProperties: false

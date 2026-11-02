@@ -21,16 +21,19 @@ public class HistoryService {
       """
   WITH owned AS (
    SELECT x.id,'TRANSFER' AS operation_type,x.actor_id AS viewer_id,'OUTGOING' AS direction,
-    x.status,x.amount,x.currency,x.source_wallet_id,x.destination_wallet_id,x.sender_name,x.recipient_name,x.note,x.ledger_transaction_id,x.error_code,x.created_at FROM transfers x
+    x.status,x.amount,x.currency,x.source_wallet_id,x.destination_wallet_id,x.sender_name,x.recipient_name,x.note,x.ledger_transaction_id,x.error_code,x.created_at,NULL::uuid AS payment_id FROM transfers x
    UNION ALL
-   SELECT x.id,'TRANSFER',w.user_id,'INCOMING',x.status,x.amount,x.currency,x.source_wallet_id,x.destination_wallet_id,x.sender_name,x.recipient_name,x.note,x.ledger_transaction_id,x.error_code,x.created_at
+   SELECT x.id,'TRANSFER',w.user_id,'INCOMING',x.status,x.amount,x.currency,x.source_wallet_id,x.destination_wallet_id,x.sender_name,x.recipient_name,x.note,x.ledger_transaction_id,x.error_code,x.created_at,NULL::uuid
     FROM transfers x JOIN wallets w ON w.id=x.destination_wallet_id WHERE x.status='SUCCEEDED'
    UNION ALL
-   SELECT f.id,'DEMO_FUNDING',f.actor_id,'FUNDING',f.status,f.amount,f.currency,NULL::uuid,w.id,'',p.display_name,'',f.ledger_transaction_id,f.error_code,f.created_at
+   SELECT f.id,'DEMO_FUNDING',f.actor_id,'FUNDING',f.status,f.amount,f.currency,NULL::uuid,w.id,'',p.display_name,'',f.ledger_transaction_id,f.error_code,f.created_at,NULL::uuid
     FROM demo_fundings f JOIN wallets w ON w.ledger_account_id=f.account_id JOIN profiles p ON p.user_id=f.actor_id
    UNION ALL
-   SELECT a.id,'PAYMENT',a.actor_id,'OUTGOING',a.status,a.amount,r.currency,a.source_wallet_id,a.destination_wallet_id,a.payer_name,r.merchant_name,r.description,p.ledger_transaction_id,a.error_code,a.created_at
+   SELECT a.id,'PAYMENT',a.actor_id,'OUTGOING',a.status,a.amount,r.currency,a.source_wallet_id,a.destination_wallet_id,a.payer_name,r.merchant_name,r.description,p.ledger_transaction_id,a.error_code,a.created_at,p.id
     FROM payment_attempts a JOIN payment_requests r ON r.id=a.request_id LEFT JOIN payments p ON p.attempt_id=a.id
+   UNION ALL
+   SELECT f.id,'REFUND',f.payer_id,'INCOMING',f.status,f.amount,f.currency,f.source_wallet_id,f.destination_wallet_id,f.merchant_name,f.payer_name,f.note,f.ledger_transaction_id,f.error_code,f.created_at,f.payment_id
+    FROM refunds f WHERE f.status='SUCCEEDED'
   ) SELECT * FROM owned WHERE viewer_id=?
   """;
 
@@ -49,7 +52,8 @@ public class HistoryService {
       String note,
       UUID ledgerTransactionId,
       String errorCode,
-      Instant createdAt) {}
+      Instant createdAt,
+      UUID paymentId) {}
 
   public record Page(List<Transaction> items, String nextCursor) {}
 
@@ -69,12 +73,13 @@ public class HistoryService {
         r.getString("note"),
         r.getObject("ledger_transaction_id", UUID.class),
         r.getString("error_code"),
-        r.getTimestamp("created_at").toInstant());
+        r.getTimestamp("created_at").toInstant(),
+        r.getObject("payment_id", UUID.class));
   }
 
   @Transactional(readOnly = true)
   public Transaction detail(UUID actor, String type, UUID id) {
-    if (!Set.of("TRANSFER", "DEMO_FUNDING", "PAYMENT").contains(type)) throw missing();
+    if (!Set.of("TRANSFER", "DEMO_FUNDING", "PAYMENT", "REFUND").contains(type)) throw missing();
     var rows = db.query(OWNED + " AND operation_type=? AND id=?", this::row, actor, type, id);
     if (rows.isEmpty()) throw missing();
     return rows.getFirst();
