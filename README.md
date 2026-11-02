@@ -4,8 +4,9 @@ Ví VND mô phỏng dùng Java 21 / Spring Boot, PostgreSQL và React / Fluent U
 (Fluent 2). Chỉ dùng dữ liệu giả; không có tiền hay kết nối ngân hàng thật.
 
 P0-01 triển khai đăng ký và tạo ví 0 VND atomic, đăng nhập/session/CSRF, xem ví,
-sửa tên hiển thị và đăng xuất. Funding, chuyển tiền, lịch sử và reconciliation
-thuộc các slice tiếp theo; **chưa hoàn thành toàn bộ P0**.
+sửa tên hiển thị và đăng xuất. P0-02 bổ sung funding 100.000 VND có quota,
+ledger/idempotency atomic, tra cứu kết quả và reconciliation CLI. Chuyển tiền và
+lịch sử giao dịch thuộc slice tiếp theo; **chưa hoàn thành toàn bộ P0**.
 
 ## Chạy local
 
@@ -102,14 +103,43 @@ Không có JWT trong browser storage hoặc public API cấp quyền/admin/sửa
 
 Flyway dùng owner, runtime dùng role hạn chế: không sửa balance hay xoá/sửa audit.
 Opening balance do DB mặc định 0, không tạo journal giả. Tiền trong JSON là chuỗi
-số nguyên. LOCKED wallet vẫn đọc được; money commands chưa được triển khai.
+số nguyên. Funding post issuance âm/personal dương với journal cân bằng và guards
+ở commit; LOCKED wallet vẫn đọc được nhưng không nhận funding mới.
 Login throttle trong memory chỉ dành cho một instance; forwarded IP chưa được tin cậy.
 API body giới hạn 16 KiB cả khi không có Content-Length; vượt ngưỡng trả JSON 413.
+
+## Cấp tiền demo và đối soát
+
+Mở “Nhận tiền demo”, xem khoản cấp/quota và xác nhận. Preset 100.000 VND/lần,
+500.000 VND/user/ngày UTC, 50.000.000 VND/môi trường/ngày UTC. Ngoài profile local,
+funding mặc định tắt; bật có chủ ý bằng `NEXAPAY_FUNDING_ENABLED=true`.
+Compose này dành cho local và bật flag theo `.env` (mặc định true); có thể tắt
+bằng `NEXAPAY_FUNDING_ENABLED=false` rồi recreate app. Không dùng cấu hình local
+như một public deployment đã được kiểm chứng.
+
+Mỗi intent dùng một UUID Idempotency-Key. 201 thành công hoặc 422 từ chối đã lưu;
+technical rollback không tạo FAILED operation. Sau timeout/re-auth/reload, tra cứu
+cùng mã ở màn funding hoặc “Thao tác đã lưu”; 404 chưa quan sát được không chứng
+minh thất bại. Reload không tự POST, logout/xuất sang actor khác xoá context; re-auth
+cùng actor giữ reference để lookup. Draft tiền chỉ nằm trong memory.
+
+CLI read-only, REPEATABLE READ snapshot, không repair; findings trả exit khác 0:
+
+```powershell
+Get-Content infra/reconcile.sql -Raw | docker compose --env-file .env -f infra/compose.yaml exec -T db psql -U nexapay_app -d nexapay
+if ($LASTEXITCODE -ne 0) { throw 'Reconciliation failed; investigate reported IDs' }
+```
+
+Linux: `docker compose --env-file .env -f infra/compose.yaml exec -T db psql -U nexapay_app -d nexapay < infra/reconcile.sql`.
+Hiện kiểm tra journal/projection/funding/command/quota/issuance; mở rộng đối soát
+cho transfer khi triển khai P0-03. Không xoá volume hay sửa balance để làm report xanh.
 
 ## Tài liệu
 
 - [Baseline và chỉ mục](Docs/README.md)
 - [Plan, acceptance và kết quả P0-01](<Implementation Plan/P0-01-identity-wallet.md>)
+- [Plan và evidence P0-02](<Implementation Plan/P0-02-demo-funding.md>)
 - [OpenAPI](Docs/api/p0-01.openapi.yaml)
+- [OpenAPI funding/commands](Docs/api/p0-02.openapi.yaml)
 - [Wireframes và trạng thái UI](Docs/ui/P0-01-wireframes.md)
 - [Quy tắc agent](AGENTS.md)

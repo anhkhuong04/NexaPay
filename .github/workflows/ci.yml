@@ -1,4 +1,4 @@
-name: P0 identity and wallet
+name: P0 wallet and funding
 on:
   push:
   pull_request:
@@ -52,6 +52,8 @@ jobs:
         run: |
           node ./node_modules/@playwright/test/cli.js install --with-deps chromium
           npm run test:e2e
+      - name: Funding reconciliation snapshot
+        run: docker compose --env-file .env -f infra/compose.yaml exec -T db psql -U nexapay_app -d nexapay < infra/reconcile.sql
       - uses: actions/upload-artifact@v4
         if: always()
         with:

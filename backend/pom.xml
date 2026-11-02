@@ -27,7 +27,16 @@
   <profiles>
     <profile>
       <id>web</id>
-      <build><plugins><plugin>
+      <build><plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId><artifactId>maven-clean-plugin</artifactId>
+        <executions><execution><id>clean-old-spa</id><phase>prepare-package</phase><goals><goal>clean</goal></goals>
+          <configuration><excludeDefaultDirectories>true</excludeDefaultDirectories>
+            <filesets><fileset><directory>${project.build.outputDirectory}/static</directory><followSymlinks>false</followSymlinks></fileset></filesets>
+          </configuration>
+        </execution></executions>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId><artifactId>maven-resources-plugin</artifactId>
         <executions><execution><id>bundle-spa</id><phase>prepare-package</phase><goals><goal>copy-resources</goal></goals>
           <configuration><outputDirectory>${project.build.outputDirectory}/static</outputDirectory>

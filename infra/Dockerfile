@@ -9,7 +9,7 @@ FROM eclipse-temurin:21-jdk AS backend
 WORKDIR /workspace
 COPY backend/ backend/
 COPY --from=web /workspace/frontend/dist/ frontend/dist/
-RUN chmod +x backend/mvnw && cd backend && ./mvnw -B -ntp -Pweb package -DskipTests
+RUN --mount=type=cache,target=/root/.m2 chmod +x backend/mvnw && cd backend && ./mvnw -B -ntp -Pweb package -DskipTests
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app

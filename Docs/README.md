@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-01  
 **Updated:** 2026-11-02  
-**Status:** Accepted design baseline; P0-01 identity/wallet đã implement, verify local và GitHub Actions (24 backend, 8 frontend, 4 E2E). Đã push main; toàn bộ P0 chưa Done.
+**Status:** Accepted design baseline; P0-01 đã verified, P0-02 funding đã verify local (39 backend, 12 frontend, 8 E2E), hosted CI đang chốt sau push. Toàn bộ P0 chưa Done.
 
 ## Đọc theo thứ tự
 
@@ -28,8 +28,8 @@ Tên ba file vẫn có `_v0.1` để giữ link/open tabs; nội dung hiện t�
 ## Công việc tiếp theo
 
 1. P0-01 đã có frontend/backend/Compose, pinned tooling, DDL/Flyway/OpenAPI và tests identity/wallet. Xem [README chạy ứng dụng](../README.md).
-2. Tiếp tục P0-02 funding: MoneyPostingService, journal guards, issuance/quota và command idempotency theo Money Spec.
-3. Tiếp tục transfer/history/recovery và reconciliation CLI theo slice; mở rộng audit/UI/tests tương ứng.
+2. P0-02 đã có funding/ledger/quota/commands/recovery và CLI đối soát funding; xem plan/evidence bên dưới.
+3. Tiếp tục P0-03 P2P/history; mở rộng command protocol, reconciliation, audit/UI/tests tương ứng.
 4. Nghiệm thu MM-01–08 và P0 DoD trước P1a. Host/public demo chỉ chọn khi biết ngân sách; không tự cam kết chi phí hoặc ngày release.
 
 Thông tin kế hoạch chưa có: số giờ/tuần, hạn portfolio, ngân sách hosting. Các thông tin này không cản P0 local. Không có benchmark/test/deployment claim trong baseline khi chưa có evidence thực tế.
@@ -38,12 +38,14 @@ Thông tin kế hoạch chưa có: số giờ/tuần, hạn portfolio, ngân sá
 
 | Slice | Plan | Trạng thái |
 |---|---|---|
-| P0-01 Identity & Wallet | [Phạm vi, implementation và acceptance evidence](<../Implementation Plan/P0-01-identity-wallet.md>) | VERIFIED ngày 02/11/2026; [CI passed](https://github.com/anhkhuong04/NexaPay/actions/runs/41385330954); funding/P2P/history là các slice tiếp theo |
+| P0-01 Identity & Wallet | [Phạm vi, implementation và acceptance evidence](<../Implementation Plan/P0-01-identity-wallet.md>) | VERIFIED ngày 02/11/2026; [CI passed](https://github.com/anhkhuong04/NexaPay/actions/runs/41385330954); P0-01 đã bàn giao; xem P0-02 bên dưới |
+| P0-02 Funding & Commands | [Implementation và acceptance evidence](<../Implementation Plan/P0-02-demo-funding.md>) | LOCAL_VERIFIED; hosted CI pending push; full P0 chưa Done |
 
 ## Artifacts implementation
 
 - [OpenAPI P0-01](api/p0-01.openapi.yaml): 8 operations / 7 paths, session/CSRF, typed errors và money strings.
-- [Wireframes/state flow](ui/P0-01-wireframes.md): screens/states trong slice.
+- [Wireframes/state flow](ui/P0-01-wireframes.md): screens/states P0-01.
+- [OpenAPI P0-02](api/p0-02.openapi.yaml), [funding/recovery wireframes](ui/P0-02-funding-wireframes.md) và [reconciliation CLI](../infra/reconcile.sql).
 - [Setup và verification](../README.md): commands thật và giới hạn runtime.
 
 ## Làm việc với agent
